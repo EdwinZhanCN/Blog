@@ -1,49 +1,209 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { getCollection } from "astro:content";
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { formatGroupName, getPostGroupName, getPostHref } from "../utils/blog";
+
+const posts = (await getCollection("blog")).filter((post) => !post.data.draft);
+const dateFormatter = new Intl.DateTimeFormat("en-us", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+});
+const noteSlots = [
+    { left: 0, top: 9, width: 32, rotation: [-8, -3] },
+    { left: 33, top: 1, width: 31, rotation: [2, 7] },
+    { left: 65, top: 12, width: 30, rotation: [-5, 4] },
+    { left: 11, top: 45, width: 34, rotation: [3, 9] },
+    { left: 49, top: 42, width: 36, rotation: [-9, -3] },
+];
+const noteTints = ["#dff3ff", "#fff0c9", "#e8f7dd", "#ffe0ea", "#e7e6ff"];
+
+function randomBetween(min: number, max: number) {
+    return min + Math.random() * (max - min);
+}
+
+function shuffle<T>(items: T[]) {
+    const result = [...items];
+
+    for (let index = result.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+    }
+
+    return result;
+}
+
+const threadPosts = posts.map((post) => ({
+    description: post.data.description,
+    displayDate: dateFormatter.format(post.data.pubDate),
+    groupLabel: formatGroupName(getPostGroupName(post)),
+    href: getPostHref(post),
+    pubDate: post.data.pubDate.toISOString(),
+    title: post.data.title,
+}));
+
+const currentThreads = shuffle(threadPosts)
+    .slice(0, 5)
+    .map((thread, index) => {
+        const slot = noteSlots[index % noteSlots.length];
+        const [minRotation, maxRotation] = slot.rotation;
+
+        return {
+            thread,
+            style: [
+                `--note-left: ${randomBetween(slot.left - 1.8, slot.left + 1.8).toFixed(2)}%`,
+                `--note-top: ${randomBetween(slot.top - 2.2, slot.top + 2.2).toFixed(2)}%`,
+                `--note-width: ${slot.width}%`,
+                `--note-rotate: ${randomBetween(minRotation, maxRotation).toFixed(2)}deg`,
+                `--note-z: ${index + 1}`,
+                `--note-tint: ${noteTints[index % noteTints.length]}`,
+            ].join("; "),
+        };
+    });
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
+    <head>
+        <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    </head>
+    <body>
+        <Header />
+        <main class="page-shell">
+            <section class="page-hero">
+                <p class="eyebrow">Personal Blog</p>
+                <h1>Where are the crossroads of humanity and tech?</h1>
+                <div class="page-actions">
+                    <a class="button-link" href="/blog">Read the blog</a>
+                    <a class="button-link secondary" href="/about">About</a>
+                </div>
+            </section>
+
+            <section
+                class="page-section current-threads-section"
+                aria-labelledby="current-threads-heading"
+            >
+                <div class="section-header-row">
+                    <div>
+                        <p class="eyebrow">Current Threads</p>
+                        <h2
+                            id="current-threads-heading"
+                            class="section-heading"
+                        >
+                            Notes on the desk.
+                        </h2>
+                    </div>
+                    <button
+                        class="button-link secondary refresh-threads-button"
+                        type="button"
+                        data-refresh-threads
+                    >
+                        Refresh
+                    </button>
+                </div>
+                <ul class="thread-desk">
+                    {
+                        currentThreads.map(({ thread, style }) => (
+                            <li style={style}>
+                                <a class="thread-note-card" href={thread.href}>
+                                    <p class="post-meta">
+                                        {thread.groupLabel} ·{" "}
+                                        <time datetime={thread.pubDate}>
+                                            {thread.displayDate}
+                                        </time>
+                                    </p>
+                                    <h3>{thread.title}</h3>
+                                    <p>{thread.description}</p>
+                                    <span class="thread-note-link">
+                                        Read note
+                                    </span>
+                                </a>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </section>
+        </main>
+        <Footer />
+        <script define:vars={{ noteSlots, noteTints, threadPosts }}>
+            const desk = document.querySelector(".thread-desk");
+            const refreshButton = document.querySelector(
+                "[data-refresh-threads]",
+            );
+
+            function randomBetween(min, max) {
+                return min + Math.random() * (max - min);
+            }
+
+            function shuffle(items) {
+                const result = [...items];
+
+                for (let index = result.length - 1; index > 0; index -= 1) {
+                    const swapIndex = Math.floor(Math.random() * (index + 1));
+                    [result[index], result[swapIndex]] = [
+                        result[swapIndex],
+                        result[index],
+                    ];
+                }
+
+                return result;
+            }
+
+            function getNoteStyle(index) {
+                const slot = noteSlots[index % noteSlots.length];
+                const [minRotation, maxRotation] = slot.rotation;
+
+                return [
+                    `--note-left: ${randomBetween(slot.left - 1.8, slot.left + 1.8).toFixed(2)}%`,
+                    `--note-top: ${randomBetween(slot.top - 2.2, slot.top + 2.2).toFixed(2)}%`,
+                    `--note-width: ${slot.width}%`,
+                    `--note-rotate: ${randomBetween(minRotation, maxRotation).toFixed(2)}deg`,
+                    `--note-z: ${index + 1}`,
+                    `--note-tint: ${noteTints[index % noteTints.length]}`,
+                ].join("; ");
+            }
+
+            function createThreadCard(thread, index) {
+                const item = document.createElement("li");
+                const link = document.createElement("a");
+                const meta = document.createElement("p");
+                const time = document.createElement("time");
+                const title = document.createElement("h3");
+                const description = document.createElement("p");
+                const readNote = document.createElement("span");
+
+                item.setAttribute("style", getNoteStyle(index));
+                link.className = "thread-note-card";
+                link.href = thread.href;
+                meta.className = "post-meta";
+                time.dateTime = thread.pubDate;
+                time.textContent = thread.displayDate;
+                title.textContent = thread.title;
+                description.textContent = thread.description;
+                readNote.className = "thread-note-link";
+                readNote.textContent = "Read note";
+
+                meta.append(thread.groupLabel, " · ", time);
+                link.append(meta, title, description, readNote);
+                item.append(link);
+
+                return item;
+            }
+
+            refreshButton?.addEventListener("click", () => {
+                if (!desk) return;
+
+                const nextThreads = shuffle(threadPosts).slice(0, 5);
+                desk.replaceChildren(
+                    ...nextThreads.map((thread, index) =>
+                        createThreadCard(thread, index),
+                    ),
+                );
+            });
+        </script>
+    </body>
 </html>

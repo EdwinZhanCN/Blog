@@ -1,0 +1,231 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { SITE_TITLE } from "../consts";
+
+type Resource = {
+    title: string;
+    description: string;
+    href: string;
+    category: string;
+    fileType: string;
+    size?: string;
+    updated?: string;
+};
+
+const title = `Resources · ${SITE_TITLE}`;
+const description =
+    "Downloadable resources, project files, and external artifacts linked from the blog.";
+const resources: Resource[] = [
+    {
+        title: "Enhanced Vanilla Minecraft Modpack",
+        description:
+            "A Minecraft server modpack for the Enhanced Vanilla setup.",
+        href: "https://edwinzhan.space/Ehanced-Vanilla.mrpack",
+        category: "Minecraft Server",
+        fileType: "MRPACK",
+    },
+];
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title={title} description={description} />
+        <style>
+            .resources-hero {
+                border-bottom: 1px solid var(--site-border);
+                display: grid;
+                gap: 22px;
+                padding-bottom: clamp(42px, 6vw, 72px);
+            }
+
+            .resources-hero h1 {
+                color: var(--site-heading);
+                font-size: clamp(3.1rem, 8vw, 7.2rem);
+                font-weight: 790;
+                letter-spacing: 0;
+                line-height: 0.94;
+                margin: 0;
+                max-width: 850px;
+            }
+
+            .resource-shelf {
+                display: grid;
+                gap: 18px;
+                grid-template-columns: repeat(12, 1fr);
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .resource-shelf > li {
+                grid-column: span 6;
+            }
+
+            .resource-card,
+            .resources-empty {
+                background: linear-gradient(
+                    180deg,
+                    color-mix(in srgb, var(--site-surface) 96%, #dff3ff),
+                    var(--site-surface)
+                );
+                border: 1px solid var(--site-border);
+                border-radius: 8px;
+                color: var(--site-text);
+                display: grid;
+                min-height: 240px;
+                overflow: hidden;
+                padding: 24px;
+                position: relative;
+                text-decoration: none;
+            }
+
+            .resource-card {
+                gap: 18px;
+                transition:
+                    background-color 160ms ease,
+                    border-color 160ms ease,
+                    box-shadow 160ms ease;
+            }
+
+            .resource-card::before,
+            .resources-empty::before {
+                background: var(--site-heading);
+                content: "";
+                height: 4px;
+                left: 0;
+                position: absolute;
+                right: 0;
+                top: 0;
+            }
+
+            .resource-card:hover {
+                border-color: var(--site-border-strong);
+                box-shadow: 0 18px 46px rgba(15, 18, 25, 0.08);
+            }
+
+            .resource-card h2,
+            .resources-empty h2 {
+                color: var(--site-heading);
+                font-size: clamp(1.55rem, 3vw, 2.35rem);
+                letter-spacing: 0;
+                line-height: 1.04;
+                margin: 0;
+            }
+
+            .resource-card p,
+            .resources-empty p {
+                color: var(--site-muted);
+                margin: 0;
+            }
+
+            .resource-card-meta {
+                align-items: center;
+                color: var(--site-soft);
+                display: flex;
+                flex-wrap: wrap;
+                font-size: 0.82rem;
+                font-weight: 760;
+                gap: 8px;
+                letter-spacing: 0.08em;
+                margin-top: auto;
+                text-transform: uppercase;
+            }
+
+            .resource-card-action {
+                color: var(--site-heading);
+                font-weight: 760;
+                margin-top: auto;
+            }
+
+            .resources-empty {
+                gap: 14px;
+                grid-column: 1 / -1;
+                min-height: 320px;
+            }
+
+            .resources-empty code {
+                justify-self: start;
+            }
+
+            @media (max-width: 760px) {
+                .resources-hero h1 {
+                    font-size: clamp(2.8rem, 15vw, 4.6rem);
+                }
+
+                .resource-shelf {
+                    grid-template-columns: 1fr;
+                }
+
+                .resource-shelf > li {
+                    grid-column: auto;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main class="page-shell">
+            <section class="resources-hero">
+                <p class="eyebrow">Resources</p>
+                <h1>On the road.</h1>
+                <p class="lead">
+                    Project assets, release artifacts, and game resources.
+                </p>
+            </section>
+
+            <section class="page-section" aria-label="Downloadable resources">
+                {
+                    resources.length > 0 ? (
+                        <ul class="resource-shelf">
+                            {resources.map((resource) => (
+                                <li>
+                                    <a
+                                        class="resource-card"
+                                        href={resource.href}
+                                        rel="noopener noreferrer"
+                                        target="_blank"
+                                    >
+                                        <p class="post-meta">
+                                            {resource.category}
+                                        </p>
+                                        <h2>{resource.title}</h2>
+                                        <p>{resource.description}</p>
+                                        <div class="resource-card-meta">
+                                            <span>{resource.fileType}</span>
+                                            {resource.size && (
+                                                <span>{resource.size}</span>
+                                            )}
+                                            {resource.updated && (
+                                                <span>
+                                                    Updated {resource.updated}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span class="resource-card-action">
+                                            Open download
+                                        </span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <div class="resources-empty">
+                            <p class="post-meta">No files published yet</p>
+                            <h2>R2-backed downloads will appear here.</h2>
+                            <p>
+                                Add Cloudflare R2 public links to the resources
+                                array in this page when a resource is ready to
+                                share.
+                            </p>
+                            <code>src/pages/resources.astro</code>
+                        </div>
+                    )
+                }
+            </section>
+        </main>
+        <Footer />
+    </body>
+</html>

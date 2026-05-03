@@ -1,0 +1,81 @@
+---
+title: "@Jetson YOLO: Ubuntu Desktop and JetPack"
+description: 先确认 Jetson 系统版本和 JetPack 版本，再装好 jtop，这是后续所有环境排错的起点。
+pubDate: 2026-05-02
+updatedDate: 2026-05-02
+order: 3
+draft: false
+tags:
+  - Jetson
+  - Ubuntu
+  - JetPack
+  - Jtop
+---
+
+import { Image } from "astro:assets";
+import JetsonLinux from "../../../assets/Jetson-Yolo/jetson-linux.png";
+import JtopDashboard from "../../../assets/Jetson-Yolo/jtop-dashboard.png";
+import JtopVersion from "../../../assets/Jetson-Yolo/jtop-version.png";
+
+This chapter is about verifying the machine before doing anything more ambitious. On Jetson, the exact JetPack and library stack matters enough that version drift can waste hours later.
+
+## Linux Command Line
+
+If you are still new to Ubuntu CLI usage, start with [Basic Commands](/blog/jetson-yolo/basic-commands/). You do not need to be a shell expert, but you do need to be comfortable moving around the filesystem and installing packages from the terminal.
+
+## Check the Desktop Environment
+
+If you see the NVIDIA-styled Jetson desktop, that is a quick sign that the system is at least booting into the expected Linux environment.
+
+<Image src={JetsonLinux} alt="Jetson Linux desktop on Jetson Orin Nano" />
+
+## Install `jtop`
+
+One of the first tools worth installing is `jtop` from `jetson-stats`. It gives you a much better operational view of the Jetson module, including clocks, memory, thermal state, and power mode.
+
+```bash
+sudo apt install python3-pip
+sudo -H pip install -U jetson-stats
+```
+
+If you are in mainland China:
+
+```bash
+sudo -H pip install -U jetson-stats -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+Then reboot:
+
+```bash
+reboot
+```
+
+After reboot:
+
+```bash
+jtop
+```
+
+If installation succeeded, you should see a terminal UI similar to this:
+
+<Image src={JtopDashboard} alt="jtop dashboard showing CPU, GPU, memory, and system status on Jetson" />
+
+## Confirm JetPack and Library Versions
+
+The next check is more important than it looks. You want to confirm that the system version, JetPack version, CUDA, cuDNN, TensorRT, and related libraries match the environment you plan to target.
+
+<Image src={JtopVersion} alt="jtop info page showing JetPack, CUDA, TensorRT, and system versions" />
+
+If your environment differs too much from the expected stack, you may need to reflash the device using NVIDIA SDK Manager from a supported x86 Ubuntu host.
+
+In the original setup behind this guide, JetPack 5.1.3 was chosen deliberately because:
+
+- JetPack 6 was still rough for some dependencies
+- many third-party setup notes and prebuilt wheels still targeted JetPack 5
+- TensorRT and CUDA compatibility was easier to reason about
+
+If you do reflash, use the official SDK Manager workflow:
+
+[NVIDIA SDK Manager](https://developer.nvidia.com/sdk-manager)
+
+This may feel like infrastructure work rather than model work, but on Jetson it is one of the highest-leverage setup steps you can take.

@@ -1,63 +1,395 @@
 ---
-import AboutHeroImage from '../assets/blog-placeholder-about.jpg';
-import Layout from '../layouts/BlogPost.astro';
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { SITE_TITLE } from "../consts";
+
+const title = `About · ${SITE_TITLE}`;
+const description =
+    "About Edwin Zhan and the engineering notes collected on this site.";
+const techIcons = [
+    { icon: "devicon:go-wordmark", label: "Go" },
+    { icon: "devicon:python", label: "Python" },
+    { icon: "devicon:typescript", label: "TypeScript" },
+    { icon: "devicon:swift", label: "Swift" },
+    { icon: "devicon:docker", label: "Docker" },
+    { icon: "devicon:fastapi", label: "FastAPI" },
+    { icon: "devicon:pytorch", label: "PyTorch" },
+    { icon: "devicon:nodejs", label: "Node.js" },
+    { icon: "devicon:react", label: "React" },
+    { icon: "devicon:wasm", label: "WebAssembly" },
+    { icon: "devicon:rust", label: "Rust" },
+];
+const techRows = Array.from({ length: 5 }, (_, rowIndex) => {
+    const offset = rowIndex % techIcons.length;
+    const shifted = [...techIcons.slice(offset), ...techIcons.slice(0, offset)];
+
+    return [...shifted, ...shifted, ...shifted];
+});
+const rowConfigs = [
+    { direction: "normal", duration: "520s" },
+    { direction: "reverse", duration: "520s" },
+    { direction: "normal", duration: "520s" },
+    { direction: "reverse", duration: "520s" },
+    { direction: "normal", duration: "520s" },
+];
 ---
 
-<Layout
-	title="About Me"
-	description="Lorem ipsum dolor sit amet"
-	pubDate={new Date('August 08 2021')}
-	heroImage={AboutHeroImage}
->
-	<p>
-		Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-		labore et dolore magna aliqua. Vitae ultricies leo integer malesuada nunc vel risus commodo
-		viverra. Adipiscing enim eu turpis egestas pretium. Euismod elementum nisi quis eleifend quam
-		adipiscing. In hac habitasse platea dictumst vestibulum. Sagittis purus sit amet volutpat. Netus
-		et malesuada fames ac turpis egestas. Eget magna fermentum iaculis eu non diam phasellus
-		vestibulum lorem. Varius sit amet mattis vulputate enim. Habitasse platea dictumst quisque
-		sagittis. Integer quis auctor elit sed vulputate mi. Dictumst quisque sagittis purus sit amet.
-	</p>
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title={title} description={description} />
+        <style>
+            .about-panel {
+                background:
+                    linear-gradient(
+                        180deg,
+                        rgba(255, 255, 255, 0.08),
+                        transparent 26%
+                    ),
+                    radial-gradient(
+                        circle at 16% 20%,
+                        rgba(80, 170, 255, 0.16),
+                        transparent 24%
+                    ),
+                    radial-gradient(
+                        circle at 82% 74%,
+                        rgba(255, 160, 90, 0.16),
+                        transparent 25%
+                    ),
+                    linear-gradient(180deg, #171922 0%, #0e1017 100%);
+                border: 1px solid
+                    color-mix(in srgb, var(--site-border) 60%, #222634);
+                border-radius: 28px;
+                box-shadow:
+                    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                    0 30px 80px rgba(7, 9, 15, 0.18);
+                min-height: 520px;
+                overflow: hidden;
+                padding: 28px;
+                position: relative;
+            }
 
-	<p>
-		Morbi tristique senectus et netus. Id semper risus in hendrerit gravida rutrum quisque non
-		tellus. Habitasse platea dictumst quisque sagittis purus sit amet. Tellus molestie nunc non
-		blandit massa. Cursus vitae congue mauris rhoncus. Accumsan tortor posuere ac ut. Fringilla urna
-		porttitor rhoncus dolor. Elit ullamcorper dignissim cras tincidunt lobortis. In cursus turpis
-		massa tincidunt dui ut ornare lectus. Integer feugiat scelerisque varius morbi enim nunc.
-		Bibendum neque egestas congue quisque egestas diam. Cras ornare arcu dui vivamus arcu felis
-		bibendum. Dignissim suspendisse in est ante in nibh mauris. Sed tempus urna et pharetra pharetra
-		massa massa ultricies mi.
-	</p>
+            .about-panel::before,
+            .about-panel::after {
+                content: "";
+                inset: 0;
+                pointer-events: none;
+                position: absolute;
+            }
 
-	<p>
-		Mollis nunc sed id semper risus in. Convallis a cras semper auctor neque. Diam sit amet nisl
-		suscipit. Lacus viverra vitae congue eu consequat ac felis donec. Egestas integer eget aliquet
-		nibh praesent tristique magna sit amet. Eget magna fermentum iaculis eu non diam. In vitae
-		turpis massa sed elementum. Tristique et egestas quis ipsum suspendisse ultrices. Eget lorem
-		dolor sed viverra ipsum. Vel turpis nunc eget lorem dolor sed viverra. Posuere ac ut consequat
-		semper viverra nam. Laoreet suspendisse interdum consectetur libero id faucibus. Diam phasellus
-		vestibulum lorem sed risus ultricies tristique. Rhoncus dolor purus non enim praesent elementum
-		facilisis. Ultrices tincidunt arcu non sodales neque. Tempus egestas sed sed risus pretium quam
-		vulputate. Viverra suspendisse potenti nullam ac tortor vitae purus faucibus ornare. Fringilla
-		urna porttitor rhoncus dolor purus non. Amet dictum sit amet justo donec enim.
-	</p>
+            .about-panel::before {
+                background:
+                    linear-gradient(
+                        180deg,
+                        rgba(8, 10, 16, 0.04),
+                        transparent 18%,
+                        transparent 78%,
+                        rgba(8, 10, 16, 0.32)
+                    ),
+                    linear-gradient(
+                        90deg,
+                        rgba(8, 10, 16, 0.22),
+                        transparent 12%,
+                        transparent 88%,
+                        rgba(8, 10, 16, 0.22)
+                    );
+                z-index: 2;
+            }
 
-	<p>
-		Mattis ullamcorper velit sed ullamcorper morbi tincidunt. Tortor posuere ac ut consequat semper
-		viverra. Tellus mauris a diam maecenas sed enim ut sem viverra. Venenatis urna cursus eget nunc
-		scelerisque viverra mauris in. Arcu ac tortor dignissim convallis aenean et tortor at. Curabitur
-		gravida arcu ac tortor dignissim convallis aenean et tortor. Egestas tellus rutrum tellus
-		pellentesque eu. Fusce ut placerat orci nulla pellentesque dignissim enim sit amet. Ut enim
-		blandit volutpat maecenas volutpat blandit aliquam etiam. Id donec ultrices tincidunt arcu. Id
-		cursus metus aliquam eleifend mi.
-	</p>
+            .about-panel::after {
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 255, 255, 0.08),
+                    transparent 24%
+                );
+                mix-blend-mode: screen;
+                opacity: 0.72;
+                z-index: 1;
+            }
 
-	<p>
-		Tempus quam pellentesque nec nam aliquam sem. Risus at ultrices mi tempus imperdiet. Id porta
-		nibh venenatis cras sed felis eget velit. Ipsum a arcu cursus vitae. Facilisis magna etiam
-		tempor orci eu lobortis elementum. Tincidunt dui ut ornare lectus sit. Quisque non tellus orci
-		ac. Blandit libero volutpat sed cras. Nec tincidunt praesent semper feugiat nibh sed pulvinar
-		proin gravida. Egestas integer eget aliquet nibh praesent tristique magna.
-	</p>
-</Layout>
+            .about-copy {
+                border-top: 1px solid var(--site-border);
+                padding-top: 32px;
+            }
+
+            .about-copy h2:first-child {
+                margin-top: 0;
+            }
+
+            .about-copy h2 {
+                color: var(--site-heading);
+                font-size: clamp(1.5rem, 2.8vw, 2.2rem);
+                line-height: 1.08;
+                margin: 38px 0 12px;
+            }
+
+            .about-copy p,
+            .about-copy li {
+                font-size: clamp(1.04rem, 1.35vw, 1.15rem);
+                line-height: 1.68;
+            }
+
+            .about-copy ul {
+                margin: 0 0 0 1.1em;
+                padding: 0;
+            }
+
+            .panel-copy {
+                color: rgba(238, 242, 255, 0.9);
+                display: grid;
+                gap: 14px;
+                max-width: 16ch;
+                position: relative;
+                z-index: 3;
+            }
+
+            .panel-copy .eyebrow {
+                color: rgba(183, 190, 211, 0.72);
+            }
+
+            .panel-copy h1 {
+                color: #f5f7fb;
+                font-size: clamp(3rem, 5vw, 5rem);
+                line-height: 0.92;
+                margin: 0;
+                max-width: 5ch;
+            }
+
+            .panel-copy p {
+                color: rgba(188, 196, 219, 0.78);
+                font-size: 1rem;
+                line-height: 1.52;
+                margin: 0;
+            }
+
+            .stack-wall {
+                inset: 96px -160px -92px -80px;
+                overflow: hidden;
+                pointer-events: none;
+                position: absolute;
+                transform: rotate(14deg);
+                transform-origin: center;
+                z-index: 0;
+            }
+
+            .stack-row {
+                margin-bottom: 16px;
+                overflow: visible;
+                width: 145%;
+            }
+
+            .stack-row:last-child {
+                margin-bottom: 0;
+            }
+
+            .stack-viewport {
+                overflow: hidden;
+                width: 100%;
+            }
+
+            .stack-track {
+                align-items: center;
+                display: flex;
+                width: max-content;
+                will-change: transform;
+                animation: stack-marquee var(--stack-duration, 520s) linear
+                    infinite;
+                user-select: none;
+            }
+
+            .stack-row[data-direction="reverse"] .stack-track {
+                animation-direction: reverse;
+            }
+
+            .stack-sequence {
+                align-items: center;
+                display: flex;
+                flex: 0 0 auto;
+                gap: 16px;
+                padding-right: 16px;
+            }
+
+            .stack-chip {
+                align-items: center;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(204, 214, 255, 0.1);
+                border-radius: 20px;
+                box-shadow:
+                    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                    0 12px 24px rgba(0, 0, 0, 0.14);
+                display: inline-flex;
+                flex: 0 0 auto;
+                height: 72px;
+                justify-content: center;
+                min-width: 72px;
+                width: 72px;
+            }
+
+            .stack-chip iconify-icon {
+                font-size: 2rem;
+                opacity: 0.96;
+            }
+
+            @keyframes stack-marquee {
+                from {
+                    transform: translate3d(0, 0, 0);
+                }
+
+                to {
+                    transform: translate3d(-50%, 0, 0);
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .stack-wall {
+                    transform: rotate(8deg);
+                }
+
+                .stack-track {
+                    animation: none;
+                    transform: none !important;
+                }
+            }
+
+            @media (max-width: 980px) {
+                .about-panel {
+                    min-height: 420px;
+                }
+
+                .stack-wall {
+                    inset: 106px -180px -96px -120px;
+                    transform: rotate(12deg);
+                }
+
+                .stack-row {
+                    width: 160%;
+                }
+            }
+
+            @media (max-width: 760px) {
+                .about-panel {
+                    border-radius: 22px;
+                    min-height: 340px;
+                    padding: 20px;
+                }
+
+                .panel-copy h1 {
+                    font-size: clamp(2.5rem, 12vw, 3.6rem);
+                }
+
+                .panel-copy p {
+                    max-width: 20ch;
+                }
+
+                .stack-wall {
+                    inset: 88px -180px -108px -180px;
+                    transform: rotate(10deg);
+                }
+
+                .stack-row {
+                    margin-bottom: 14px;
+                    width: 200%;
+                }
+
+                .stack-chip iconify-icon {
+                    font-size: 1.85rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main class="page-shell prose-page">
+            <section class="about-panel" aria-label="Technology stack wall">
+                <div class="panel-copy">
+                    <p class="eyebrow">About</p>
+                    <h1>Hi.</h1>
+                </div>
+
+                <div class="stack-wall" aria-hidden="true">
+                    {
+                        techRows.map((row, rowIndex) => (
+                            <div
+                                class="stack-row"
+                                data-direction={
+                                    rowConfigs[rowIndex]?.direction ?? "normal"
+                                }
+                                style={`--stack-duration: ${
+                                    rowConfigs[rowIndex]?.duration ?? "520s"
+                                }`}
+                            >
+                                <div class="stack-viewport">
+                                    <div class="stack-track">
+                                        <div class="stack-sequence">
+                                            {row.map((item) => (
+                                                <div
+                                                    class="stack-chip"
+                                                    title={item.label}
+                                                >
+                                                    <iconify-icon
+                                                        icon={item.icon}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div
+                                            class="stack-sequence"
+                                            aria-hidden="true"
+                                        >
+                                            {row.map((item) => (
+                                                <div
+                                                    class="stack-chip"
+                                                    title={item.label}
+                                                >
+                                                    <iconify-icon
+                                                        icon={item.icon}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+            </section>
+
+            <section class="about-copy prose-page-content">
+                <h2>Bio.</h2>
+                <ul>
+                    <li>Zihao (Edwin) Zhan</li>
+                    <li>CS @ RPI</li>
+                    <li>5 year experience in programming.</li>
+                    <li>An Enthusiastic in CS, Cognitive Science, and Art.</li>
+                    <li>
+                        Email me at <a href="mailto:edwinzhancn@icloud.com"
+                            >edwinzhancn@icloud.com</a>
+                    </li>
+                </ul>
+
+                <h2>How I Write</h2>
+                <p>
+                    The posts are intentionally close to the projects. Most of
+                    notes are written locally on Obsidian, published at this
+                    site build using Astro.
+                </p>
+
+                <h2>Current Interests</h2>
+                <ul>
+                    <li>High-performance softwares, distributed systems.</li>
+                    <li>
+                        Home-native machine learning infrastructure for
+                        constrained local environments.
+                    </li>
+                    <li>ReAct Agents with memory systems.</li>
+                </ul>
+            </section>
+        </main>
+        <Footer />
+        <script
+            src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"
+        ></script>
+    </body>
+</html>

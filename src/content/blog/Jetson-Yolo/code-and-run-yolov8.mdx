@@ -1,0 +1,101 @@
+---
+title: "@Jetson YOLO: Code and Run YOLOv8"
+description: 克隆 ultralytics 仓库、选择正确的 Python 解释器，并在 Jetson 上导出并运行 YOLOv8 TensorRT 模型。
+pubDate: 2026-05-02
+updatedDate: 2026-05-02
+order: 6
+draft: false
+tags:
+  - Jetson
+  - YOLO
+  - TensorRT
+  - VS Code
+---
+
+import { Image } from "astro:assets";
+import PythonEnvShow from "../../../assets/Jetson-Yolo/python-env-show.png";
+import SelectPythonEnv from "../../../assets/Jetson-Yolo/select-python-env.png";
+
+This chapter moves from environment setup into an actual working YOLOv8 inference path. The main idea is simple:
+
+1. clone the Ultralytics repository
+2. make sure VS Code is pointing at the correct conda interpreter
+3. export a TensorRT engine
+4. run a prediction and verify output
+
+## Clone the Repository
+
+Choose a directory where you want to store the code:
+
+```bash
+cd ~/Documents
+git clone https://github.com/ultralytics/ultralytics.git
+```
+
+If you need a mainland China mirror:
+
+```bash
+git clone https://gitclone.com/github.com/ultralytics/ultralytics.git
+```
+
+If you are working across multiple machines, storing source on NAS is also a reasonable option. The exact storage strategy matters less than keeping the Jetson-side path predictable.
+
+## Verify the Python Environment in VS Code
+
+Open VS Code after cloning the repository. In the Python extension view, you should be able to see the global interpreters and the `yolov8` conda environment created earlier.
+
+<Image src={PythonEnvShow} alt="VS Code Python environments showing the conda yolov8 environment" />
+
+## Download a Model
+
+For Jetson Orin Nano, lighter YOLOv8 variants are usually the best starting point:
+
+- [YOLOv8n](https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8n.pt)
+- [YOLOv8s](https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8s.pt)
+
+Move the downloaded checkpoint into your working directory:
+
+```bash
+mv ~/Downloads/sth.pt ~/Documents/Ultralytics/
+```
+
+## Export and Run YOLOv8
+
+Create a Python file such as `train.py` and start with:
+
+```python
+from ultralytics import YOLO
+
+# Load a YOLOv8n PyTorch model
+model = YOLO("yolov8n.pt")
+
+# Export the model
+model.export(format="engine")  # creates 'yolov8n.engine'
+
+# Load the exported TensorRT model
+trt_model = YOLO("yolov8n.engine")
+
+# Run inference, and store the predict file into ./runs directory
+results = trt_model("https://ultralytics.com/images/bus.jpg", save=True)
+```
+
+This does two important things:
+
+- converts the PyTorch checkpoint into a TensorRT engine
+- verifies that the engine can actually run inference on-device
+
+## Select the Correct Interpreter
+
+In VS Code, press `Ctrl + Shift + P`, search for `Python: Select Interpreter`, and choose the `yolov8` conda environment.
+
+<Image src={SelectPythonEnv} alt="VS Code Select Interpreter dialog with the yolov8 environment selected" />
+
+Once the interpreter is correct, run the file from VS Code.
+
+## Use `jtop` While Exporting
+
+Keep `jtop` open in another terminal and watch the system while the model exports and runs. It is a quick way to confirm that the machine is doing what you think it is doing, especially when TensorRT export takes time.
+
+After the script finishes, inspect the generated output under the `runs` directory.
+
+If that prediction output appears correctly, the full path from conda to TensorRT to YOLO inference is working.

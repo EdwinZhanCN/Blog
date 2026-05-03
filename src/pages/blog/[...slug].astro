@@ -1,20 +1,63 @@
 ---
-import { type CollectionEntry, getCollection, render } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
+import { type CollectionEntry, getCollection, render } from "astro:content";
+import BlogPost from "../../layouts/BlogPost.astro";
+import { estimateReadingTime } from "../../utils/readingTime";
+import {
+	formatGroupName,
+	getGroupHref,
+	getPostGroupName,
+	getPostHref,
+	sortPostsByOrder,
+} from "../../utils/blog";
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
+	const posts = await getCollection("blog");
 	return posts.map((post) => ({
-		params: { slug: post.id },
+		params: { slug: post.id.toLowerCase() },
 		props: post,
 	}));
 }
-type Props = CollectionEntry<'blog'>;
+
+type Props = CollectionEntry<"blog">;
 
 const post = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
+const readingTime = estimateReadingTime(post.body);
+const rawGroupName = getPostGroupName(post);
+const groupName = formatGroupName(rawGroupName);
+const groupHref = getGroupHref(rawGroupName);
+const groupPosts = sortPostsByOrder(
+	(await getCollection("blog"))
+		.filter((entry) => !entry.data.draft)
+		.filter((entry) => getPostGroupName(entry) === rawGroupName),
+);
+const currentPostIndex = groupPosts.findIndex((entry) => entry.id === post.id);
+const previousPost = currentPostIndex > 0 ? groupPosts[currentPostIndex - 1] : undefined;
+const nextPost = currentPostIndex >= 0 && currentPostIndex < groupPosts.length - 1
+	? groupPosts[currentPostIndex + 1]
+	: undefined;
 ---
 
-<BlogPost {...post.data}>
+<BlogPost
+	{...post.data}
+	groupName={groupName}
+	groupHref={groupHref}
+	headings={headings}
+	readingTime={readingTime}
+	previousPost={
+		previousPost && {
+			title: previousPost.data.title,
+			description: previousPost.data.description,
+			href: getPostHref(previousPost),
+		}
+	}
+	nextPost={
+		nextPost && {
+			title: nextPost.data.title,
+			description: nextPost.data.description,
+			href: getPostHref(nextPost),
+		}
+	}
+>
 	<Content />
 </BlogPost>
