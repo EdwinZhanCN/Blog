@@ -730,226 +730,261 @@ const hasToc = tocHeadings.length > 0;
 		</div>
 		<Footer />
 
-		<script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js" async></script>
-		<script is:inline>
-			const sectionNav = document.querySelector("[data-section-nav]");
-			const topLink = document.querySelector("[data-doc-top]");
-			const progressFill = document.querySelector("[data-progress-fill]");
-			const links = sectionNav ? Array.from(sectionNav.querySelectorAll("a[href^='#']")) : [];
-			const sections = links
-				.map((link) => ({
-					id: decodeURIComponent(link.hash.slice(1)),
-					link,
-					element: document.getElementById(decodeURIComponent(link.hash.slice(1))),
-				}))
-				.filter((item) => item.element);
-			let activeId = "";
-			let scrollLockUntil = 0;
-			let scrollFrame = 0;
+		<script is:inline data-astro-rerun>
+			(() => {
+				window.__blogPostCleanup?.();
 
-			const languageNames = {
-				js: "JavaScript",
-				jsx: "React JSX",
-				ts: "TypeScript",
-				tsx: "React TSX",
-				md: "Markdown",
-				mdx: "MDX",
-				sh: "Shell",
-				bash: "Bash",
-				zsh: "Zsh",
-				py: "Python",
-				go: "Go",
-				rs: "Rust",
-				json: "JSON",
-				yaml: "YAML",
-				yml: "YAML",
-				toml: "TOML",
-				text: "Text",
-				txt: "Text",
-			};
-
-			const iconAliases = {
-				bash: "shell",
-				sh: "shell",
-				zsh: "shell",
-				txt: "text",
-				yml: "yaml",
-			};
-
-			function languageLabel(language) {
-				return languageNames[language] || language.toUpperCase();
-			}
-
-			function copyText(text, callback) {
-				let copied = false;
-
-				const finish = (success) => {
-					callback(success);
-				};
-
-				if (navigator.clipboard && window.isSecureContext) {
-					navigator.clipboard
-						.writeText(text)
-						.then(() => finish(true))
-						.catch(() => fallbackCopy());
-					return;
-				}
-
-				fallbackCopy();
-
-				function fallbackCopy() {
-					const textarea = document.createElement("textarea");
-					textarea.value = text;
-					textarea.setAttribute("readonly", "");
-					textarea.style.position = "fixed";
-					textarea.style.top = "-999px";
-					document.body.appendChild(textarea);
-					textarea.select();
-
-					try {
-						copied = document.execCommand("copy");
-					} catch {
-						copied = false;
-					} finally {
-						document.body.removeChild(textarea);
-					}
-
-					finish(copied);
-				}
-			}
-
-			function enhanceCodeBlocks() {
-				document.querySelectorAll(".doc-content pre.astro-code[data-language]").forEach((pre) => {
-					if (pre.parentElement?.classList.contains("code-frame")) {
+				function ensureIconify() {
+					if (window.customElements?.get("iconify-icon")) {
 						return;
 					}
 
-					const language = pre.dataset.language || "text";
-					const frame = document.createElement("div");
-					const header = document.createElement("div");
-					const languageNode = document.createElement("span");
-					const icon = document.createElement("iconify-icon");
-					const label = document.createElement("span");
-					const copy = document.createElement("button");
+					if (document.querySelector('script[data-iconify-loader="blog"]')) {
+						return;
+					}
 
-					frame.className = "code-frame";
-					header.className = "code-frame-header";
-					languageNode.className = "code-language";
-					icon.setAttribute("icon", `catppuccin:${iconAliases[language] || language}`);
-					icon.setAttribute("aria-hidden", "true");
-					label.textContent = languageLabel(language);
-					copy.className = "code-copy";
-					copy.type = "button";
-					copy.textContent = "Copy";
-
-					icon.addEventListener("error", () => {
-						icon.hidden = true;
-					});
-
-					copy.addEventListener("click", () => {
-						copyText(pre.innerText, (success) => {
-							copy.textContent = success ? "Copied" : "Copy failed";
-							window.setTimeout(() => {
-								copy.textContent = "Copy";
-							}, success ? 1400 : 1800);
-						});
-					});
-
-					languageNode.append(icon, label);
-					header.append(languageNode, copy);
-					pre.before(frame);
-					frame.append(header, pre);
-				});
-			}
-
-			enhanceCodeBlocks();
-
-			function setActive(id, updateHash = true) {
-				if (!id || activeId === id) {
-					return;
+					const script = document.createElement("script");
+					script.src = "https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js";
+					script.async = true;
+					script.dataset.iconifyLoader = "blog";
+					document.head.append(script);
 				}
 
-				activeId = id;
-				const index = sections.findIndex((item) => item.id === id);
+				const cleanup = [];
+				const on = (target, type, handler, options) => {
+					target?.addEventListener(type, handler, options);
+					cleanup.push(() => target?.removeEventListener(type, handler, options));
+				};
 
-				sections.forEach((item) => {
-					item.link.classList.toggle("active", item.id === id);
-					item.link.toggleAttribute("aria-current", item.id === id);
-				});
+				ensureIconify();
 
-				if (progressFill && index >= 0) {
-					progressFill.style.height = `${((index + 1) / sections.length) * 100}%`;
+				const sectionNav = document.querySelector("[data-section-nav]");
+				const topLink = document.querySelector("[data-doc-top]");
+				const progressFill = document.querySelector("[data-progress-fill]");
+				const links = sectionNav ? Array.from(sectionNav.querySelectorAll("a[href^='#']")) : [];
+				const sections = links
+					.map((link) => ({
+						id: decodeURIComponent(link.hash.slice(1)),
+						link,
+						element: document.getElementById(decodeURIComponent(link.hash.slice(1))),
+					}))
+					.filter((item) => item.element);
+				let activeId = "";
+				let scrollLockUntil = 0;
+				let scrollFrame = 0;
+
+				const languageNames = {
+					js: "JavaScript",
+					jsx: "React JSX",
+					ts: "TypeScript",
+					tsx: "React TSX",
+					md: "Markdown",
+					mdx: "MDX",
+					sh: "Shell",
+					bash: "Bash",
+					zsh: "Zsh",
+					py: "Python",
+					go: "Go",
+					rs: "Rust",
+					json: "JSON",
+					yaml: "YAML",
+					yml: "YAML",
+					toml: "TOML",
+					text: "Text",
+					txt: "Text",
+				};
+
+				const iconAliases = {
+					bash: "shell",
+					sh: "shell",
+					zsh: "shell",
+					txt: "text",
+					yml: "yaml",
+				};
+
+				function languageLabel(language) {
+					return languageNames[language] || language.toUpperCase();
 				}
 
-				if (updateHash && window.location.hash !== `#${id}`) {
-					window.history.replaceState(null, "", `#${id}`);
-				}
-			}
+				function copyText(text, callback) {
+					let copied = false;
 
-			function sectionFromHash() {
-				const id = decodeURIComponent(window.location.hash.slice(1));
-				return sections.some((item) => item.id === id) ? id : sections[0]?.id;
-			}
+					const finish = (success) => {
+						callback(success);
+					};
 
-			function sectionFromScroll() {
-				const marker = window.scrollY + Math.min(window.innerHeight * 0.34, 320);
-				let current = sections[0]?.id;
+					if (navigator.clipboard && window.isSecureContext) {
+						navigator.clipboard
+							.writeText(text)
+							.then(() => finish(true))
+							.catch(() => fallbackCopy());
+						return;
+					}
 
-				for (const item of sections) {
-					if (item.element.offsetTop <= marker) {
-						current = item.id;
+					fallbackCopy();
+
+					function fallbackCopy() {
+						const textarea = document.createElement("textarea");
+						textarea.value = text;
+						textarea.setAttribute("readonly", "");
+						textarea.style.position = "fixed";
+						textarea.style.top = "-999px";
+						document.body.appendChild(textarea);
+						textarea.select();
+
+						try {
+							copied = document.execCommand("copy");
+						} catch {
+							copied = false;
+						} finally {
+							document.body.removeChild(textarea);
+						}
+
+						finish(copied);
 					}
 				}
 
-				return current;
-			}
+				function enhanceCodeBlocks() {
+					document.querySelectorAll(".doc-content pre.astro-code[data-language]").forEach((pre) => {
+						if (pre.parentElement?.classList.contains("code-frame")) {
+							return;
+						}
 
-			function syncFromScroll() {
-				if (Date.now() < scrollLockUntil || sections.length === 0) {
-					return;
+						const language = pre.dataset.language || "text";
+						const frame = document.createElement("div");
+						const header = document.createElement("div");
+						const languageNode = document.createElement("span");
+						const icon = document.createElement("iconify-icon");
+						const label = document.createElement("span");
+						const copy = document.createElement("button");
+
+						frame.className = "code-frame";
+						header.className = "code-frame-header";
+						languageNode.className = "code-language";
+						icon.setAttribute("icon", `catppuccin:${iconAliases[language] || language}`);
+						icon.setAttribute("aria-hidden", "true");
+						label.textContent = languageLabel(language);
+						copy.className = "code-copy";
+						copy.type = "button";
+						copy.textContent = "Copy";
+
+						on(icon, "error", () => {
+							icon.hidden = true;
+						});
+
+						on(copy, "click", () => {
+							copyText(pre.innerText, (success) => {
+								copy.textContent = success ? "Copied" : "Copy failed";
+								window.setTimeout(() => {
+									copy.textContent = "Copy";
+								}, success ? 1400 : 1800);
+							});
+						});
+
+						languageNode.append(icon, label);
+						header.append(languageNode, copy);
+						pre.before(frame);
+						frame.append(header, pre);
+					});
 				}
 
-				if (scrollFrame) {
-					window.cancelAnimationFrame(scrollFrame);
+				function setActive(id, updateHash = true) {
+					if (!id || activeId === id) {
+						return;
+					}
+
+					activeId = id;
+					const index = sections.findIndex((item) => item.id === id);
+
+					sections.forEach((item) => {
+						item.link.classList.toggle("active", item.id === id);
+						item.link.toggleAttribute("aria-current", item.id === id);
+					});
+
+					if (progressFill && index >= 0) {
+						progressFill.style.height = `${((index + 1) / sections.length) * 100}%`;
+					}
+
+					if (updateHash && window.location.hash !== `#${id}`) {
+						window.history.replaceState(null, "", `#${id}`);
+					}
 				}
 
-				scrollFrame = window.requestAnimationFrame(() => {
-					setActive(sectionFromScroll());
+				function sectionFromHash() {
+					const id = decodeURIComponent(window.location.hash.slice(1));
+					return sections.some((item) => item.id === id) ? id : sections[0]?.id;
+				}
+
+				function sectionFromScroll() {
+					const marker = window.scrollY + Math.min(window.innerHeight * 0.34, 320);
+					let current = sections[0]?.id;
+
+					for (const item of sections) {
+						if (item.element.offsetTop <= marker) {
+							current = item.id;
+						}
+					}
+
+					return current;
+				}
+
+				function syncFromScroll() {
+					if (Date.now() < scrollLockUntil || sections.length === 0) {
+						return;
+					}
+
+					if (scrollFrame) {
+						window.cancelAnimationFrame(scrollFrame);
+					}
+
+					scrollFrame = window.requestAnimationFrame(() => {
+						setActive(sectionFromScroll());
+					});
+				}
+
+				function navigateTo(id, target) {
+					const section = sections.find((item) => item.id === id);
+
+					if (!section) {
+						return;
+					}
+
+					target?.blur();
+					scrollLockUntil = Date.now() + 900;
+					setActive(id);
+					section.element.scrollIntoView({ behavior: "smooth", block: "start" });
+				}
+
+				enhanceCodeBlocks();
+
+				links.forEach((link) => {
+					on(link, "click", (event) => {
+						event.preventDefault();
+						navigateTo(decodeURIComponent(link.hash.slice(1)), link);
+					});
 				});
-			}
 
-			function navigateTo(id, target) {
-				const section = sections.find((item) => item.id === id);
-
-				if (!section) {
-					return;
-				}
-
-				target?.blur();
-				scrollLockUntil = Date.now() + 900;
-				setActive(id);
-				section.element.scrollIntoView({ behavior: "smooth", block: "start" });
-			}
-
-			links.forEach((link) => {
-				link.addEventListener("click", (event) => {
+				on(topLink, "click", (event) => {
 					event.preventDefault();
-					navigateTo(decodeURIComponent(link.hash.slice(1)), link);
+					topLink.blur();
+					scrollLockUntil = Date.now() + 900;
+					window.history.replaceState(null, "", window.location.pathname);
+					window.scrollTo({ top: 0, behavior: "smooth" });
+					setActive(sections[0]?.id, false);
 				});
-			});
 
-			topLink?.addEventListener("click", (event) => {
-				event.preventDefault();
-				topLink.blur();
-				scrollLockUntil = Date.now() + 900;
-				window.history.replaceState(null, "", window.location.pathname);
-				window.scrollTo({ top: 0, behavior: "smooth" });
-				setActive(sections[0]?.id, false);
-			});
+				on(window, "hashchange", () => setActive(sectionFromHash(), false));
+				on(window, "scroll", syncFromScroll, { passive: true });
+				setActive(sectionFromHash(), false);
+				syncFromScroll();
 
-			window.addEventListener("hashchange", () => setActive(sectionFromHash(), false));
-			window.addEventListener("scroll", syncFromScroll, { passive: true });
-			setActive(sectionFromHash(), false);
+				window.__blogPostCleanup = () => {
+					if (scrollFrame) {
+						window.cancelAnimationFrame(scrollFrame);
+					}
+					cleanup.splice(0).forEach((fn) => fn());
+				};
+			})();
 		</script>
 	</body>
 </html>
