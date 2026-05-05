@@ -21,6 +21,23 @@ const noteSlots = [
     { left: 49, top: 42, width: 36, rotation: [-9, -3] },
 ];
 const noteTints = ["#dff3ff", "#fff0c9", "#e8f7dd", "#ffe0ea", "#e7e6ff"];
+const featuredPlaylists = [
+    {
+        id: "2026-s",
+        side: "A",
+        src: "https://embed.music.apple.com/us/playlist/2026-s/pl.u-pMyllEmcWBV25My",
+        title: "2026's",
+        year: "2026",
+    },
+    {
+        id: "2025-s",
+        side: "B",
+        src: "https://embed.music.apple.com/cn/playlist/2025-s/pl.u-qxylKqDI3jagdpJ?l=en",
+        title: "2025's",
+        year: "2025",
+    },
+] as const;
+const defaultPlaylist = featuredPlaylists[0];
 
 function randomBetween(min: number, max: number) {
     return min + Math.random() * (max - min);
@@ -127,13 +144,98 @@ const currentThreads = shuffle(threadPosts)
                     }
                 </ul>
             </section>
+
+            <section
+                class="page-section playlist-section"
+                aria-labelledby="featured-playlist-heading"
+            >
+                <div class="playlist-shell">
+                    <div class="playlist-vinyl-panel">
+                        <p class="eyebrow">Featured Playlist</p>
+                        <h2
+                            id="featured-playlist-heading"
+                            class="section-heading"
+                        >
+                            Flip the record.
+                        </h2>
+                        <button
+                            class="playlist-vinyl-button"
+                            type="button"
+                            data-playlist-toggle
+                            aria-label={`Flip to ${featuredPlaylists[1].title}`}
+                        >
+                            <span class="playlist-vinyl-stack" aria-hidden="true">
+                                <span class="playlist-sleeve"></span>
+                                <span class="playlist-vinyl-disc">
+                                    <span class="playlist-vinyl-rings"></span>
+                                    <span class="playlist-vinyl-center">
+                                        <span data-playlist-side>
+                                            Side {defaultPlaylist.side}
+                                        </span>
+                                        <strong data-playlist-year>
+                                            {defaultPlaylist.year}
+                                        </strong>
+                                    </span>
+                                </span>
+                            </span>
+                        </button>
+                        <p class="playlist-mini-copy">
+                            <span data-playlist-current-title>
+                                {defaultPlaylist.title}
+                            </span>
+                            <span>Tap the vinyl to switch sides.</span>
+                        </p>
+                    </div>
+                    <div class="playlist-frame-wrap">
+                        <div class="playlist-player-shell">
+                            <p class="playlist-player-meta">
+                                <span data-playlist-meta-side>
+                                    Side {defaultPlaylist.side}
+                                </span>
+                                <strong data-playlist-meta-title>
+                                    {defaultPlaylist.title}
+                                </strong>
+                            </p>
+                            <iframe
+                                title={`Apple Music playlist: ${defaultPlaylist.title}`}
+                                allow="autoplay *; encrypted-media *;"
+                                frameborder="0"
+                                height="450"
+                                loading="lazy"
+                                style="width:100%;max-width:660px;overflow:hidden;background:transparent;"
+                                sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
+                                src={defaultPlaylist.src}
+                                data-playlist-frame
+                            ></iframe>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
         <Footer />
-        <script define:vars={{ noteSlots, noteTints, threadPosts }}>
+        <script
+            define:vars={{ featuredPlaylists, noteSlots, noteTints, threadPosts }}
+        >
             const desk = document.querySelector(".thread-desk");
             const refreshButton = document.querySelector(
                 "[data-refresh-threads]",
             );
+            const playlistFrame = document.querySelector("[data-playlist-frame]");
+            const playlistToggle = document.querySelector(
+                "[data-playlist-toggle]",
+            );
+            const playlistSide = document.querySelector("[data-playlist-side]");
+            const playlistYear = document.querySelector("[data-playlist-year]");
+            const playlistCurrentTitle = document.querySelector(
+                "[data-playlist-current-title]",
+            );
+            const playlistMetaSide = document.querySelector(
+                "[data-playlist-meta-side]",
+            );
+            const playlistMetaTitle = document.querySelector(
+                "[data-playlist-meta-title]",
+            );
+            let activePlaylistIndex = 0;
 
             function randomBetween(min, max) {
                 return min + Math.random() * (max - min);
@@ -203,6 +305,49 @@ const currentThreads = shuffle(threadPosts)
                         createThreadCard(thread, index),
                     ),
                 );
+            });
+
+            function setActivePlaylist(index) {
+                const nextPlaylist = featuredPlaylists[index];
+                const upcomingPlaylist =
+                    featuredPlaylists[(index + 1) % featuredPlaylists.length];
+
+                if (!nextPlaylist || !playlistFrame) return;
+
+                activePlaylistIndex = index;
+                playlistFrame.src = nextPlaylist.src;
+                playlistFrame.title = `Apple Music playlist: ${nextPlaylist.title}`;
+                playlistToggle?.classList.toggle("is-b-side", index === 1);
+                playlistToggle?.setAttribute(
+                    "aria-label",
+                    `Flip to ${upcomingPlaylist.title}`,
+                );
+
+                if (playlistSide) {
+                    playlistSide.textContent = `Side ${nextPlaylist.side}`;
+                }
+
+                if (playlistYear) {
+                    playlistYear.textContent = nextPlaylist.year;
+                }
+
+                if (playlistCurrentTitle) {
+                    playlistCurrentTitle.textContent = nextPlaylist.title;
+                }
+
+                if (playlistMetaSide) {
+                    playlistMetaSide.textContent = `Side ${nextPlaylist.side}`;
+                }
+
+                if (playlistMetaTitle) {
+                    playlistMetaTitle.textContent = nextPlaylist.title;
+                }
+            }
+
+            playlistToggle?.addEventListener("click", () => {
+                const nextIndex =
+                    (activePlaylistIndex + 1) % featuredPlaylists.length;
+                setActivePlaylist(nextIndex);
             });
         </script>
     </body>
