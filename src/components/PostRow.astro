@@ -1,0 +1,37 @@
+---
+import { STATUS } from "../consts";
+import {
+	formatDate,
+	formatGroupName,
+	getPostGroupName,
+	getPostHref,
+	seedFor,
+	splitTitle,
+	type BlogPost,
+} from "../utils/blog";
+
+interface Props {
+	post: BlogPost;
+	index: number;
+	/** Show the one-line description under the title. */
+	detail?: boolean;
+	/** Replace the series column (useful inside a series, where it would repeat). */
+	aside?: string;
+}
+
+const { post, index, detail = false, aside } = Astro.props;
+const { main } = splitTitle(post.data.title);
+const status = post.data.status && post.data.status !== "inked" ? STATUS[post.data.status] : undefined;
+---
+
+<a class="row" href={getPostHref(post)} data-peek={seedFor(post.id.toLowerCase())}>
+	<span class="row-n">{String(index).padStart(2, "0")}</span>
+	<span>
+		<span class="row-title">
+			{main}{status && <span class="row-flag">{status.label}</span>}
+		</span>
+		{detail && post.data.description && <span class="row-desc" lang="zh-Hans">{post.data.description}</span>}
+	</span>
+	<span class="row-series">{aside ?? formatGroupName(getPostGroupName(post))}</span>
+	<time class="row-date" datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+</a>

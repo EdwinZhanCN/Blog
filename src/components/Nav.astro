@@ -1,0 +1,22 @@
+---
+import { NAV, SITE_TITLE } from "../consts";
+---
+
+<header class="nav" transition:persist="nav">
+	<nav class="nav-pill" aria-label="Primary">
+		<a class="nav-brand" href="/" aria-label={`${SITE_TITLE} — home`}>
+			<span class="mark" aria-hidden="true"></span>
+			<span>{SITE_TITLE}</span>
+		</a>
+		<div class="nav-links" data-nav-links>
+			<span class="nav-indicator" data-nav-indicator aria-hidden="true"></span>
+			{NAV.map((item) => <a href={item.href}>{item.label}</a>)}
+		</div>
+		<button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch between paper and ink">
+			<svg viewBox="0 0 16 16" aria-hidden="true">
+				<circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+				<path d="M8 1.75a6.25 6.25 0 0 1 0 12.5Z" fill="currentColor"></path>
+			</svg>
+		</button>
+	</nav>
+</header>

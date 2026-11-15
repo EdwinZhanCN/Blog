@@ -1,80 +1,121 @@
 ---
-import type { BlogGroup } from "../../../utils/blog";
 import { getCollection } from "astro:content";
-import BaseHead from "../../../components/BaseHead.astro";
-import Footer from "../../../components/Footer.astro";
-import FormattedDate from "../../../components/FormattedDate.astro";
-import Header from "../../../components/Header.astro";
-import { SITE_TITLE } from "../../../consts";
-import { getPostHref, groupPosts } from "../../../utils/blog";
+import PostRow from "../../../components/PostRow.astro";
+import Base from "../../../layouts/Base.astro";
+import { formatDate, getPublishedPosts, groupPosts, seedFor, type BlogGroup } from "../../../utils/blog";
+import { estimateReadingTime } from "../../../utils/readingTime";
 
 export async function getStaticPaths() {
-	const groups = groupPosts((await getCollection("blog")).filter((post) => !post.data.draft));
-
-	return groups.map((group) => ({
-		params: { group: group.slug },
-		props: { group },
-	}));
+	const groups = groupPosts(getPublishedPosts(await getCollection("blog")));
+	return groups.map((group) => ({ params: { group: group.slug }, props: { group } }));
 }
 
-type Props = {
+interface Props {
 	group: BlogGroup;
-};
+}
 
 const { group } = Astro.props;
+const dates = group.posts.map((post) => post.data.pubDate.valueOf());
+const from = formatDate(new Date(Math.min(...dates)));
+const to = formatDate(new Date(Math.max(...dates)));
+const count = String(group.posts.length).padStart(2, "0");
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead
-			title={`${group.label} · Blog · ${SITE_TITLE}`}
-			description={`${group.label} folder with ${group.posts.length} blog ${group.posts.length === 1 ? "post" : "posts"}.`}
-		/>
-	</head>
-	<body>
-		<Header />
-		<main class="page-shell">
-			<section class="page-hero">
-				<p class="eyebrow">Folder</p>
-				<h1>{group.label}</h1>
-				<p class="lead">
-					{group.posts.length} {group.posts.length === 1 ? "post" : "posts"} collected under the same
-					project thread.
+<Base title={group.label} description={`${group.posts.length} notes filed under ${group.label}.`}>
+	<div class="page wrap">
+		<header class="series-head">
+			<div>
+				<p class="label crumbs" data-reveal>
+					<a href="/blog/">Writing</a> <span aria-hidden="true">/</span> Series
 				</p>
-				<div class="page-actions">
-					<a class="button-link" href="/blog">All folders</a>
-					<a class="button-link secondary" href={getPostHref(group.posts[0])}>
-						Start with {group.posts[0]?.data.title}
-					</a>
-				</div>
-			</section>
+				<h1 class="page-title" data-reveal="words">{group.label}</h1>
+				<dl class="series-meta label" data-reveal data-delay="0.3">
+					<div>
+						<dt>Notes</dt>
+						<dd>{count}</dd>
+					</div>
+					<div>
+						<dt>{from === to ? "Written" : "Span"}</dt>
+						<dd>{from === to ? from : `${from} — ${to}`}</dd>
+					</div>
+					<div>
+						<dt>Seed</dt>
+						<dd>{String(seedFor(group.slug)).padStart(5, "0")}</dd>
+					</div>
+				</dl>
+			</div>
+			<div class="sheet series-cover" data-reveal data-delay="0.15">
+				<canvas data-cover={seedFor(group.slug)} aria-hidden="true"></canvas>
+			</div>
+		</header>
 
-			<section class="page-section" aria-label={`${group.label} posts`}>
-				<ul class="post-grid">
-					{
-						group.posts.map((post) => (
-							<li>
-								<a class="post-card" href={getPostHref(post)}>
-									<p class="post-meta">
-										{group.label} · {post.data.order}. <FormattedDate date={post.data.pubDate} />
-									</p>
-									<h2>{post.data.title}</h2>
-									<p>{post.data.description}</p>
-									{post.data.tags.length > 0 && (
-										<div class="tag-row" aria-label="Tags">
-											{post.data.tags.map((tag) => (
-												<span class="tag-pill">{tag}</span>
-											))}
-										</div>
-									)}
-								</a>
-							</li>
-						))
-					}
-				</ul>
-			</section>
-		</main>
-		<Footer />
-	</body>
-</html>
+		<section aria-label="Notes in this series">
+			<p class="label tracklist">Read in order</p>
+			<div class="rows">
+				{
+					group.posts.map((post, index) => (
+						<PostRow
+							post={post}
+							index={index + 1}
+							detail
+							aside={estimateReadingTime(post.body ?? "").replace(" read", "")}
+						/>
+					))
+				}
+			</div>
+		</section>
+	</div>
+</Base>
+
+<style>
+	.series-head {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) clamp(240px, 34vw, 520px);
+		align-items: end;
+		gap: clamp(28px, 5vw, 80px);
+		padding-bottom: clamp(48px, 7vw, 104px);
+	}
+
+	.crumbs {
+		padding-bottom: 28px;
+	}
+
+	.crumbs a:hover {
+		color: var(--fg);
+	}
+
+	.series-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 18px 40px;
+		margin-top: clamp(28px, 4vw, 52px);
+	}
+
+	.series-meta dt {
+		color: var(--fg-3);
+	}
+
+	.series-meta dd {
+		margin-top: 6px;
+		color: var(--fg);
+	}
+
+	.series-cover {
+		aspect-ratio: 1;
+	}
+
+	.tracklist {
+		padding-bottom: 14px;
+	}
+
+	@media (max-width: 760px) {
+		.series-head {
+			grid-template-columns: 1fr;
+		}
+
+		.series-cover {
+			order: -1;
+			width: min(70%, 320px);
+		}
+	}
+</style>

@@ -1,0 +1,53 @@
+---
+import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
+import { SITE_TITLE } from "../consts";
+
+interface Props {
+	title: string;
+	description: string;
+	image?: string;
+	type?: "website" | "article";
+}
+
+const { title, description, image, type = "website" } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const fullTitle = title === SITE_TITLE ? title : `${title} — ${SITE_TITLE}`;
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<script is:inline>
+	(() => {
+		const root = document.documentElement;
+		root.classList.add("js");
+		let theme = "light";
+		try {
+			theme =
+				localStorage.getItem("blog-theme") ||
+				(matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+		} catch {}
+		root.dataset.theme = theme === "dark" ? "dark" : "light";
+	})();
+</script>
+<ClientRouter fallback="swap" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+<link rel="sitemap" href="/sitemap-index.xml" />
+<link rel="alternate" type="application/rss+xml" title={SITE_TITLE} href={new URL("rss.xml", Astro.site)} />
+<link rel="canonical" href={canonical} />
+<meta name="generator" content={Astro.generator} />
+<meta name="theme-color" content="#f3f3f1" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0c0c0d" media="(prefers-color-scheme: dark)" />
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={SITE_TITLE} />
+<meta property="og:url" content={canonical} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+{image && <meta property="og:image" content={new URL(image, Astro.site)} />}
+<meta name="twitter:card" content={image ? "summary_large_image" : "summary"} />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+{image && <meta name="twitter:image" content={new URL(image, Astro.site)} />}

@@ -1,17 +1,21 @@
 ---
 import { type CollectionEntry, getCollection, render } from "astro:content";
-import BlogPost from "../../layouts/BlogPost.astro";
-import { estimateReadingTime } from "../../utils/readingTime";
+import Post from "../../layouts/Post.astro";
 import {
 	formatGroupName,
 	getGroupHref,
 	getPostGroupName,
 	getPostHref,
+	getPublishedPosts,
+	seedFor,
 	sortPostsByOrder,
+	splitTitle,
 } from "../../utils/blog";
+import { estimateReadingTime } from "../../utils/readingTime";
 
 export async function getStaticPaths() {
-	const posts = await getCollection("blog");
+	// Drafts get a page while you're writing (npm run dev) and none once the site is built.
+	const posts = (await getCollection("blog")).filter((post) => import.meta.env.DEV || !post.data.draft);
 	return posts.map((post) => ({
 		params: { slug: post.id.toLowerCase() },
 		props: post,
@@ -22,42 +26,36 @@ type Props = CollectionEntry<"blog">;
 
 const post = Astro.props;
 const { Content, headings } = await render(post);
-const readingTime = estimateReadingTime(post.body);
-const rawGroupName = getPostGroupName(post);
-const groupName = formatGroupName(rawGroupName);
-const groupHref = getGroupHref(rawGroupName);
-const groupPosts = sortPostsByOrder(
-	(await getCollection("blog"))
-		.filter((entry) => !entry.data.draft)
-		.filter((entry) => getPostGroupName(entry) === rawGroupName),
+const groupName = getPostGroupName(post);
+const siblings = sortPostsByOrder(
+	getPublishedPosts(await getCollection("blog")).filter((entry) => getPostGroupName(entry) === groupName),
 );
-const currentPostIndex = groupPosts.findIndex((entry) => entry.id === post.id);
-const previousPost = currentPostIndex > 0 ? groupPosts[currentPostIndex - 1] : undefined;
-const nextPost = currentPostIndex >= 0 && currentPostIndex < groupPosts.length - 1
-	? groupPosts[currentPostIndex + 1]
-	: undefined;
+const index = siblings.findIndex((entry) => entry.id === post.id);
+const neighbour = (offset: number) => {
+	const entry = index >= 0 ? siblings[index + offset] : undefined;
+	return (
+		entry && {
+			href: getPostHref(entry),
+			title: splitTitle(entry.data.title).main,
+			n: index + offset + 1,
+			seed: seedFor(entry.id.toLowerCase()),
+		}
+	);
+};
 ---
 
-<BlogPost
+<Post
 	{...post.data}
-	groupName={groupName}
-	groupHref={groupHref}
 	headings={headings}
-	readingTime={readingTime}
-	previousPost={
-		previousPost && {
-			title: previousPost.data.title,
-			description: previousPost.data.description,
-			href: getPostHref(previousPost),
-		}
-	}
-	nextPost={
-		nextPost && {
-			title: nextPost.data.title,
-			description: nextPost.data.description,
-			href: getPostHref(nextPost),
-		}
-	}
+	groupName={formatGroupName(groupName)}
+	groupHref={getGroupHref(groupName)}
+	position={index >= 0 ? index + 1 : 1}
+	total={Math.max(siblings.length, 1)}
+	previous={neighbour(-1)}
+	next={neighbour(1)}
+	readingTime={estimateReadingTime(post.body ?? "")}
+	seed={seedFor(post.id.toLowerCase())}
+	slug={post.id.toLowerCase()}
 >
 	<Content />
-</BlogPost>
+</Post>

@@ -1,396 +1,329 @@
 ---
-import BaseHead from "../components/BaseHead.astro";
-import Footer from "../components/Footer.astro";
-import Header from "../components/Header.astro";
-import { SITE_TITLE } from "../consts";
+import { AUTHOR } from "../consts";
+import Base from "../layouts/Base.astro";
+import { seedFor } from "../utils/blog";
 
-const title = `About · ${SITE_TITLE}`;
-const description =
-    "About Edwin Zhan and the engineering notes collected on this site.";
-const techIcons = [
-    { icon: "devicon:go-wordmark", label: "Go" },
-    { icon: "devicon:python", label: "Python" },
-    { icon: "devicon:typescript", label: "TypeScript" },
-    { icon: "devicon:swift", label: "Swift" },
-    { icon: "devicon:docker", label: "Docker" },
-    { icon: "devicon:fastapi", label: "FastAPI" },
-    { icon: "devicon:pytorch", label: "PyTorch" },
-    { icon: "devicon:nodejs", label: "Node.js" },
-    { icon: "devicon:react", label: "React" },
-    { icon: "devicon:wasm", label: "WebAssembly" },
-    { icon: "devicon:rust", label: "Rust" },
-];
-const techRows = Array.from({ length: 5 }, (_, rowIndex) => {
-    const offset = rowIndex % techIcons.length;
-    const shifted = [...techIcons.slice(offset), ...techIcons.slice(0, offset)];
+const portraitSeed = seedFor(AUTHOR.fullName);
 
-    return [...shifted, ...shifted, ...shifted];
-});
-const rowConfigs = [
-    { direction: "normal", duration: "520s" },
-    { direction: "reverse", duration: "520s" },
-    { direction: "normal", duration: "520s" },
-    { direction: "reverse", duration: "520s" },
-    { direction: "normal", duration: "520s" },
+const bio = [
+	{ term: "Name", detail: AUTHOR.fullName },
+	{ term: "Studying", detail: "Computer Science, RPI" },
+	{ term: "Programming", detail: "Five years, so far" },
+	{ term: "Drawn to", detail: "Computer science, cognitive science, art" },
 ];
+
+const interests = [
+	"High-performance software and distributed systems.",
+	"Home-native machine learning infrastructure, for constrained local environments.",
+	"ReAct agents with memory systems.",
+];
+
+const stack = ["Go", "Python", "TypeScript", "Swift", "Rust", "React", "PyTorch", "FastAPI", "Docker", "Node.js", "WebAssembly"];
 ---
 
-<!doctype html>
-<html lang="en">
-    <head>
-        <BaseHead title={title} description={description} />
-        <style>
-            .about-panel {
-                background:
-                    linear-gradient(
-                        180deg,
-                        rgba(255, 255, 255, 0.08),
-                        transparent 26%
-                    ),
-                    radial-gradient(
-                        circle at 16% 20%,
-                        rgba(80, 170, 255, 0.16),
-                        transparent 24%
-                    ),
-                    radial-gradient(
-                        circle at 82% 74%,
-                        rgba(255, 160, 90, 0.16),
-                        transparent 25%
-                    ),
-                    linear-gradient(180deg, #171922 0%, #0e1017 100%);
-                border: 1px solid
-                    color-mix(in srgb, var(--site-border) 60%, #222634);
-                border-radius: 28px;
-                box-shadow:
-                    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-                    0 30px 80px rgba(7, 9, 15, 0.18);
-                min-height: 520px;
-                overflow: hidden;
-                padding: 28px;
-                position: relative;
-            }
+<Base title="About" description={`About ${AUTHOR.name} and the notes collected on this site.`}>
+	<div class="page wrap">
+		<header class="page-head about-head">
+			<div class="about-intro">
+				<p class="label" data-reveal>About</p>
+				<h1 class="page-title" data-reveal="words">Hi.</h1>
+				<p class="page-lede" data-reveal data-delay="0.3">
+					I’m Zihao. Edwin, in English. I write software, and before that, I drew.
+				</p>
+			</div>
+			<figure class="portrait" data-reveal data-delay="0.15">
+				<div class="sheet"><canvas data-cover={portraitSeed} aria-hidden="true"></canvas></div>
+				<figcaption class="label">Self-portrait · grown from my name · seed {String(portraitSeed).padStart(5, "0")}</figcaption>
+			</figure>
+		</header>
 
-            .about-panel::before,
-            .about-panel::after {
-                content: "";
-                inset: 0;
-                pointer-events: none;
-                position: absolute;
-            }
+		<section class="split block" aria-labelledby="bio">
+			<h2 class="label split-label" id="bio">Bio</h2>
+			<dl class="split-body ledger">
+				{
+					bio.map((row) => (
+						<div data-reveal>
+							<dt class="label">{row.term}</dt>
+							<dd>{row.detail}</dd>
+						</div>
+					))
+				}
+				<div data-reveal>
+					<dt class="label">Write to me</dt>
+					<dd><a class="arrow-link" href={`mailto:${AUTHOR.email}`}>{AUTHOR.email}</a></dd>
+				</div>
+			</dl>
+		</section>
 
-            .about-panel::before {
-                background:
-                    linear-gradient(
-                        180deg,
-                        rgba(8, 10, 16, 0.04),
-                        transparent 18%,
-                        transparent 78%,
-                        rgba(8, 10, 16, 0.32)
-                    ),
-                    linear-gradient(
-                        90deg,
-                        rgba(8, 10, 16, 0.22),
-                        transparent 12%,
-                        transparent 88%,
-                        rgba(8, 10, 16, 0.22)
-                    );
-                z-index: 2;
-            }
+		<section class="split block" aria-labelledby="interests">
+			<h2 class="label split-label" id="interests">Current interests</h2>
+			<ol class="split-body interests">
+				{
+					interests.map((item, index) => (
+						<li data-reveal>
+							<span class="label">{String(index + 1).padStart(2, "0")}</span>
+							{item}
+						</li>
+					))
+				}
+			</ol>
+		</section>
 
-            .about-panel::after {
-                background: linear-gradient(
-                    135deg,
-                    rgba(255, 255, 255, 0.08),
-                    transparent 24%
-                );
-                mix-blend-mode: screen;
-                opacity: 0.72;
-                z-index: 1;
-            }
+		<section class="split block" aria-labelledby="how">
+			<h2 class="label split-label" id="how">How I write</h2>
+			<div class="split-body essay">
+				<p data-scrub>
+					The posts are intentionally close to the projects. Most notes are written locally in Obsidian and
+					published here with Astro. Some are sketches. Some belong to projects I shelved. They stay.
+				</p>
+			</div>
+		</section>
+	</div>
 
-            .about-copy {
-                border-top: 1px solid var(--site-border);
-                padding-top: 32px;
-            }
+	<section class="marquee" aria-label={`Works with ${stack.join(", ")}`}>
+		<div class="marquee-track" aria-hidden="true">
+			{
+				[0, 1].map(() => (
+					<div class="marquee-run">
+						{stack.map((name, index) => (
+							<span class:list={{ serif: index % 3 === 1 }}>{name}</span>
+						))}
+					</div>
+				))
+			}
+		</div>
+	</section>
 
-            .about-copy h2:first-child {
-                margin-top: 0;
-            }
+	<div class="wrap">
+		<section class="split block" aria-labelledby="site">
+			<h2 class="label split-label" id="site">This site</h2>
+			<div class="split-body colophon">
+				<div class="colophon-text">
+					<p data-reveal>
+						<strong>The ink is me.</strong> It moves, it makes a mess, and it’s the part you actually see.
+					</p>
+					<p data-reveal>
+						<strong>The circle is what I leave untouched.</strong> An ideal I hold, not one I’m in a hurry to
+						become. It’s only visible because of what moves around it.
+					</p>
+					<p data-reveal>
+						<strong>The layout is strict; the painting isn’t.</strong> Each visit grows a new one from a random
+						seed, and every note and series grows its own from its name. I like control. This is where I let
+						accident in.
+					</p>
+					<p class="label colophon-credits" data-reveal>
+						Inter · Newsreader · JetBrains Mono<br />
+						Astro · Motion · one WebGL fragment shader
+					</p>
+				</div>
+				<figure class="reserved" data-reveal>
+					<div class="reserved-frame"></div>
+					<figcaption class="label">
+						<span class="seal" aria-hidden="true"></span>
+						Reserved. For a drawing of my own, when one says it right.
+					</figcaption>
+				</figure>
+			</div>
+		</section>
+	</div>
+</Base>
 
-            .about-copy h2 {
-                color: var(--site-heading);
-                font-size: clamp(1.5rem, 2.8vw, 2.2rem);
-                line-height: 1.08;
-                margin: 38px 0 12px;
-            }
+<style>
+	.about-head {
+		grid-template-columns: minmax(0, 1fr) clamp(220px, 30vw, 440px);
+		align-items: end;
+		gap: clamp(28px, 5vw, 80px);
+	}
 
-            .about-copy p,
-            .about-copy li {
-                font-size: clamp(1.04rem, 1.35vw, 1.15rem);
-                line-height: 1.68;
-            }
+	.about-intro {
+		display: grid;
+		gap: 28px;
+	}
 
-            .about-copy ul {
-                margin: 0 0 0 1.1em;
-                padding: 0;
-            }
+	.portrait .sheet {
+		aspect-ratio: 1;
+	}
 
-            .panel-copy {
-                color: rgba(238, 242, 255, 0.9);
-                display: grid;
-                gap: 14px;
-                max-width: 16ch;
-                position: relative;
-                z-index: 3;
-            }
+	.portrait figcaption {
+		margin-top: 10px;
+		color: var(--fg-3);
+	}
 
-            .panel-copy .eyebrow {
-                color: rgba(183, 190, 211, 0.72);
-            }
+	@media (max-width: 760px) {
+		.about-head {
+			grid-template-columns: 1fr;
+		}
 
-            .panel-copy h1 {
-                color: #f5f7fb;
-                font-size: clamp(3rem, 5vw, 5rem);
-                line-height: 0.92;
-                margin: 0;
-                max-width: 5ch;
-            }
+		.portrait {
+			order: -1;
+			width: min(62%, 280px);
+		}
+	}
 
-            .panel-copy p {
-                color: rgba(188, 196, 219, 0.78);
-                font-size: 1rem;
-                line-height: 1.52;
-                margin: 0;
-            }
+	.block {
+		padding-block: clamp(40px, 6vw, 88px);
+		border-top: 1px solid var(--line-strong);
+	}
 
-            .stack-wall {
-                inset: 96px -160px -92px -80px;
-                overflow: hidden;
-                pointer-events: none;
-                position: absolute;
-                transform: rotate(14deg);
-                transform-origin: center;
-                z-index: 0;
-            }
+	.ledger > div {
+		display: grid;
+		grid-template-columns: minmax(7rem, 1fr) minmax(0, 3fr);
+		align-items: baseline;
+		gap: 16px;
+		padding-block: 16px;
+		border-bottom: 1px solid var(--line);
+	}
 
-            .stack-row {
-                margin-bottom: 16px;
-                overflow: visible;
-                width: 145%;
-            }
+	.ledger > div:first-child {
+		padding-top: 0;
+	}
 
-            .stack-row:last-child {
-                margin-bottom: 0;
-            }
+	.ledger dd {
+		font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+		font-weight: 600;
+		line-height: 1.15;
+		letter-spacing: -0.03em;
+	}
 
-            .stack-viewport {
-                overflow: hidden;
-                width: 100%;
-            }
+	.interests li {
+		display: grid;
+		grid-template-columns: 3rem minmax(0, 1fr);
+		align-items: baseline;
+		max-width: 24em;
+		font-size: clamp(1.5rem, 3.2vw, 2.75rem);
+		font-weight: 600;
+		line-height: 1.08;
+		letter-spacing: -0.04em;
+		text-wrap: balance;
+	}
 
-            .stack-track {
-                align-items: center;
-                display: flex;
-                width: max-content;
-                will-change: transform;
-                animation: stack-marquee var(--stack-duration, 520s) linear
-                    infinite;
-                user-select: none;
-            }
+	.interests li + li {
+		margin-top: 0.7em;
+	}
 
-            .stack-row[data-direction="reverse"] .stack-track {
-                animation-direction: reverse;
-            }
+	.essay p {
+		max-width: 22em;
+		font-size: clamp(1.5rem, 3.2vw, 2.75rem);
+		font-weight: 600;
+		line-height: 1.1;
+		letter-spacing: -0.04em;
+	}
 
-            .stack-sequence {
-                align-items: center;
-                display: flex;
-                flex: 0 0 auto;
-                gap: 16px;
-                padding-right: 16px;
-            }
+	/* ── Stack: a line of type passing by ───────────────────────────────── */
 
-            .stack-chip {
-                align-items: center;
-                background: rgba(255, 255, 255, 0.03);
-                border: 1px solid rgba(204, 214, 255, 0.1);
-                border-radius: 20px;
-                box-shadow:
-                    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-                    0 12px 24px rgba(0, 0, 0, 0.14);
-                display: inline-flex;
-                flex: 0 0 auto;
-                height: 72px;
-                justify-content: center;
-                min-width: 72px;
-                width: 72px;
-            }
+	.marquee {
+		overflow: hidden;
+		padding-block: clamp(28px, 4vw, 56px);
+		border-top: 1px solid var(--line-strong);
+		-webkit-mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+		mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+	}
 
-            .stack-chip iconify-icon {
-                font-size: 2rem;
-                opacity: 0.96;
-            }
+	.marquee-track {
+		display: flex;
+		width: max-content;
+		animation: pass 46s linear infinite;
+	}
 
-            @keyframes stack-marquee {
-                from {
-                    transform: translate3d(0, 0, 0);
-                }
+	.marquee-run {
+		display: flex;
+		align-items: baseline;
+	}
 
-                to {
-                    transform: translate3d(-50%, 0, 0);
-                }
-            }
+	.marquee-run span {
+		display: inline-flex;
+		align-items: center;
+		font-size: clamp(2.5rem, 7vw, 6.5rem);
+		font-weight: 600;
+		line-height: 1;
+		letter-spacing: -0.05em;
+		white-space: nowrap;
+	}
 
-            @media (prefers-reduced-motion: reduce) {
-                .stack-wall {
-                    transform: rotate(8deg);
-                }
+	.marquee-run span.serif {
+		font-weight: 400;
+		letter-spacing: -0.04em;
+	}
 
-                .stack-track {
-                    animation: none;
-                    transform: none !important;
-                }
-            }
+	.marquee-run span::after {
+		content: "";
+		width: 0.14em;
+		height: 0.14em;
+		margin-inline: 0.42em;
+		background: var(--fg);
+	}
 
-            @media (max-width: 980px) {
-                .about-panel {
-                    min-height: 420px;
-                }
+	@keyframes pass {
+		to {
+			transform: translate3d(-50%, 0, 0);
+		}
+	}
 
-                .stack-wall {
-                    inset: 106px -180px -96px -120px;
-                    transform: rotate(12deg);
-                }
+	@media (prefers-reduced-motion: reduce) {
+		.marquee-track {
+			animation: none;
+		}
+	}
 
-                .stack-row {
-                    width: 160%;
-                }
-            }
+	/* ── Colophon ───────────────────────────────────────────────────────── */
 
-            @media (max-width: 760px) {
-                .about-panel {
-                    border-radius: 22px;
-                    min-height: 340px;
-                    padding: 20px;
-                }
+	.colophon {
+		display: grid;
+		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+		align-items: start;
+		gap: clamp(32px, 5vw, 80px);
+	}
 
-                .panel-copy h1 {
-                    font-size: clamp(2.5rem, 12vw, 3.6rem);
-                }
+	.colophon-text p {
+		max-width: 30em;
+		font-size: clamp(1.125rem, 1.7vw, 1.375rem);
+		line-height: 1.4;
+		letter-spacing: -0.02em;
+		color: var(--fg-2);
+	}
 
-                .panel-copy p {
-                    max-width: 20ch;
-                }
+	.colophon-text p + p {
+		margin-top: 1.3em;
+	}
 
-                .stack-wall {
-                    inset: 88px -180px -108px -180px;
-                    transform: rotate(10deg);
-                }
+	.colophon-text strong {
+		color: var(--fg);
+		font-weight: 600;
+	}
 
-                .stack-row {
-                    margin-bottom: 14px;
-                    width: 200%;
-                }
+	.colophon-text .colophon-credits {
+		margin-top: 3em;
+		font-size: 0.6875rem;
+		line-height: 1.9;
+		letter-spacing: 0.08em;
+	}
 
-                .stack-chip iconify-icon {
-                    font-size: 1.85rem;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <Header />
-        <main class="page-shell prose-page">
-            <section class="about-panel" aria-label="Technology stack wall">
-                <div class="panel-copy">
-                    <p class="eyebrow">About</p>
-                    <h1>Hi.</h1>
-                </div>
+	.reserved-frame {
+		aspect-ratio: 4 / 5;
+		box-shadow: inset 0 0 0 1px var(--line-strong);
+	}
 
-                <div class="stack-wall" aria-hidden="true">
-                    {
-                        techRows.map((row, rowIndex) => (
-                            <div
-                                class="stack-row"
-                                data-direction={
-                                    rowConfigs[rowIndex]?.direction ?? "normal"
-                                }
-                                style={`--stack-duration: ${
-                                    rowConfigs[rowIndex]?.duration ?? "520s"
-                                }`}
-                            >
-                                <div class="stack-viewport">
-                                    <div class="stack-track">
-                                        <div class="stack-sequence">
-                                            {row.map((item) => (
-                                                <div
-                                                    class="stack-chip"
-                                                    title={item.label}
-                                                >
-                                                    <iconify-icon
-                                                        icon={item.icon}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div
-                                            class="stack-sequence"
-                                            aria-hidden="true"
-                                        >
-                                            {row.map((item) => (
-                                                <div
-                                                    class="stack-chip"
-                                                    title={item.label}
-                                                >
-                                                    <iconify-icon
-                                                        icon={item.icon}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    }
-                </div>
-            </section>
+	.reserved figcaption {
+		display: flex;
+		align-items: baseline;
+		gap: 10px;
+		margin-top: 12px;
+		line-height: 1.6;
+	}
 
-            <section class="about-copy prose-page-content">
-                <h2>Bio.</h2>
-                <ul>
-                    <li>Zihao (Edwin) Zhan</li>
-                    <li>CS @ RPI</li>
-                    <li>5 year experience in programming.</li>
-                    <li>An Enthusiastic in CS, Cognitive Science, and Art.</li>
-                    <li>
-                        Email me at <a href="mailto:contact@edwinzhan.space"
-                            >contact@edwinzhan.space</a
-                        >
-                    </li>
-                </ul>
+	.reserved .seal {
+		flex: none;
+		width: 9px;
+		height: 9px;
+	}
 
-                <h2>How I Write</h2>
-                <p>
-                    The posts are intentionally close to the projects. Most of
-                    notes are written locally on Obsidian, published at this
-                    site build using Astro.
-                </p>
+	@media (max-width: 860px) {
+		.colophon {
+			grid-template-columns: 1fr;
+		}
 
-                <h2>Current Interests</h2>
-                <ul>
-                    <li>High-performance softwares, distributed systems.</li>
-                    <li>
-                        Home-native machine learning infrastructure for
-                        constrained local environments.
-                    </li>
-                    <li>ReAct Agents with memory systems.</li>
-                </ul>
-            </section>
-        </main>
-        <Footer />
-        <script
-            src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"
-        ></script>
-    </body>
-</html>
+		.reserved {
+			max-width: 320px;
+		}
+	}
+</style>

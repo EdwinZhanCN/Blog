@@ -109,3 +109,54 @@ export function groupPosts(posts: BlogPost[]) {
 export function getGroupBySlug(groups: BlogGroup[], slug: string) {
 	return groups.find((group) => group.slug === slug);
 }
+
+/** "@Lumen: Pragmatic Inference" → { kicker: "Lumen", main: "Pragmatic Inference" } */
+export function splitTitle(title: string) {
+	const match = title.match(/^@([^:：]+)[:：]\s*(.+)$/);
+
+	if (!match) {
+		return { kicker: undefined, main: title };
+	}
+
+	return { kicker: match[1].trim(), main: match[2].trim() };
+}
+
+export function getPostDate(post: BlogPost) {
+	return post.data.updatedDate ?? post.data.pubDate;
+}
+
+/** Newest first; within a day, keep series order so part 1 sits above part 2. */
+export function sortPostsByDate(posts: BlogPost[]) {
+	return [...posts].sort((left, right) => {
+		const delta = right.data.pubDate.valueOf() - left.data.pubDate.valueOf();
+
+		if (delta !== 0) {
+			return delta;
+		}
+
+		const group = collator.compare(getPostGroupName(left), getPostGroupName(right));
+
+		return group !== 0 ? group : left.data.order - right.data.order;
+	});
+}
+
+/** 2026.05.24 — the machine's way of writing a date. */
+export function formatDate(date: Date) {
+	const year = date.getUTCFullYear();
+	const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+	const day = String(date.getUTCDate()).padStart(2, "0");
+
+	return `${year}.${month}.${day}`;
+}
+
+/** Stable FNV-1a hash: the seed a post's painting is grown from. */
+export function seedFor(value: string) {
+	let hash = 0x811c9dc5;
+
+	for (let index = 0; index < value.length; index += 1) {
+		hash ^= value.charCodeAt(index);
+		hash = Math.imul(hash, 0x01000193);
+	}
+
+	return ((hash >>> 0) % 99991) + 1;
+}

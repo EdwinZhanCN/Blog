@@ -1,0 +1,385 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Reading.
+   Tuned for Chinese prose with English and code running through it.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.prose {
+	--measure: 46rem;
+	font-size: 1.0625rem;
+	line-height: 1.85;
+	letter-spacing: 0;
+	color: color-mix(in oklab, var(--ink) 90%, var(--paper));
+	overflow-wrap: break-word;
+	/* Let the browser put the hair of space between 中文 and English, and tuck in stacked punctuation. */
+	text-autospace: normal;
+	text-spacing-trim: trim-start;
+	line-break: strict;
+	hanging-punctuation: first;
+	font-variant-numeric: tabular-nums;
+}
+
+.prose > * + * {
+	margin-top: 1.5em;
+}
+
+.prose :where(h1, h2, h3, h4) {
+	position: relative;
+	color: var(--fg);
+	font-weight: 600;
+	line-height: 1.25;
+	letter-spacing: -0.02em;
+	text-wrap: balance;
+	scroll-margin-top: 96px;
+}
+
+/* Some notes use # for their sections; treat it exactly like ##. */
+.prose h1,
+.prose h2 {
+	margin-top: 3.2em;
+	padding-top: 1.3em;
+	border-top: 1px solid var(--line-strong);
+	font-size: 1.75rem;
+	letter-spacing: -0.03em;
+}
+
+.prose h3 {
+	margin-top: 2.4em;
+	font-size: 1.3125rem;
+}
+
+.prose h4 {
+	margin-top: 2em;
+	font-size: 1.0625rem;
+}
+
+.prose :where(h1, h2, h3, h4) + * {
+	margin-top: 0.9em;
+}
+
+.prose a {
+	color: var(--fg);
+	text-decoration: underline;
+	text-decoration-color: var(--line-strong);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.22em;
+	transition: text-decoration-color 0.3s;
+}
+
+.prose a:hover {
+	text-decoration-color: var(--seal);
+}
+
+.prose strong {
+	color: var(--fg);
+	font-weight: 650;
+}
+
+.prose em {
+	font-family: var(--font-serif);
+	font-size: 1.04em;
+}
+
+.prose :where(ul, ol) {
+	padding-left: 1.5em;
+}
+
+.prose ul {
+	list-style: none;
+}
+
+.prose ul > li {
+	position: relative;
+}
+
+.prose ul > li::before {
+	content: "";
+	position: absolute;
+	left: -1.15em;
+	top: 0.82em;
+	width: 5px;
+	height: 5px;
+	background: var(--fg);
+}
+
+.prose ol {
+	list-style: decimal;
+}
+
+.prose ol > li::marker {
+	font-family: var(--font-mono);
+	font-size: 0.8em;
+	color: var(--fg-2);
+}
+
+.prose li + li,
+.prose li > :where(ul, ol) {
+	margin-top: 0.45em;
+}
+
+.prose li > p + p {
+	margin-top: 0.8em;
+}
+
+/* The author's aside: set by hand. */
+.prose blockquote {
+	padding-left: 1.4em;
+	border-left: 2px solid var(--fg);
+	font-family: var(--font-serif);
+	font-size: 1.1875rem;
+	line-height: 1.7;
+	color: var(--fg);
+}
+
+.prose blockquote > * + * {
+	margin-top: 0.8em;
+}
+
+.prose hr {
+	width: 100%;
+	height: 9px;
+	margin-block: 3.2em;
+	border: 0;
+	background:
+		linear-gradient(var(--fg), var(--fg)) 0 50% / 5px 5px no-repeat,
+		linear-gradient(var(--line-strong), var(--line-strong)) 17px 50% / calc(100% - 17px) 1px no-repeat;
+}
+
+.prose img {
+	height: auto;
+	border-radius: 10px;
+	box-shadow: 0 0 0 1px var(--line);
+	cursor: zoom-in;
+}
+
+/* ── Callouts (Obsidian `> [!note]`) ─────────────────────────────────────── */
+
+.prose .callout {
+	padding: 1.1em 1.3em 1.2em;
+	border-radius: 14px;
+	background: var(--tint);
+	font-size: 1rem;
+	line-height: 1.75;
+}
+
+.prose .callout > * + * {
+	margin-top: 0.7em;
+}
+
+.prose .callout-title {
+	display: flex;
+	align-items: center;
+	gap: 0.7em;
+	font-family: var(--font-mono);
+	font-size: 0.6875rem;
+	font-weight: 500;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--fg);
+}
+
+.prose .callout-title::before {
+	content: "";
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	box-shadow: inset 0 0 0 1.5px currentColor;
+}
+
+.prose .callout:is([data-callout="warning"], [data-callout="caution"], [data-callout="danger"], [data-callout="important"])
+	.callout-title::before {
+	background: var(--seal);
+	box-shadow: none;
+}
+
+/* ── Code ────────────────────────────────────────────────────────────────── */
+
+:root {
+	--astro-code-foreground: color-mix(in oklab, var(--ink) 88%, var(--paper));
+	--astro-code-background: transparent;
+	--astro-code-token-keyword: var(--ink);
+	--astro-code-token-function: var(--ink);
+	--astro-code-token-constant: color-mix(in oklab, var(--ink) 74%, var(--paper));
+	--astro-code-token-parameter: color-mix(in oklab, var(--ink) 80%, var(--paper));
+	--astro-code-token-string: color-mix(in oklab, var(--ink) 56%, var(--paper));
+	--astro-code-token-string-expression: color-mix(in oklab, var(--ink) 56%, var(--paper));
+	--astro-code-token-punctuation: color-mix(in oklab, var(--ink) 48%, var(--paper));
+	--astro-code-token-comment: color-mix(in oklab, var(--ink) 40%, var(--paper));
+	--astro-code-token-link: var(--ink);
+}
+
+.prose :not(pre) > code {
+	padding: 0.14em 0.4em;
+	border-radius: 6px;
+	background: var(--tint);
+	box-shadow: inset 0 0 0 1px var(--line);
+	font-family: var(--font-mono);
+	font-size: 0.85em;
+	letter-spacing: -0.01em;
+	word-break: break-word;
+}
+
+.prose .code {
+	margin-inline: 0;
+	border-radius: 14px;
+	background: var(--tint);
+	box-shadow: inset 0 0 0 1px var(--line);
+	overflow: hidden;
+}
+
+.prose .code-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	height: 38px;
+	padding: 0 8px 0 18px;
+	border-bottom: 1px solid var(--line);
+	font-family: var(--font-mono);
+	font-size: 0.6875rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--fg-2);
+}
+
+.prose .code-bar .is-file {
+	text-transform: none;
+	letter-spacing: 0;
+	color: var(--fg);
+}
+
+.prose .code-copy {
+	height: 24px;
+	padding: 0 10px;
+	border-radius: 980px;
+	font: inherit;
+	letter-spacing: inherit;
+	text-transform: inherit;
+	color: var(--fg-2);
+	transition:
+		background 0.3s,
+		color 0.3s;
+}
+
+.prose .code-copy:hover {
+	background: color-mix(in oklab, var(--ink) 8%, transparent);
+	color: var(--fg);
+}
+
+.prose pre {
+	margin: 0;
+	padding: 18px;
+	overflow-x: auto;
+	background: transparent !important;
+	font-family: var(--font-mono);
+	font-size: 0.84rem;
+	line-height: 1.7;
+	letter-spacing: 0;
+	tab-size: 4;
+	text-autospace: no-autospace;
+	scrollbar-width: thin;
+}
+
+/* Before the script frames it, a bare <pre> still looks finished. */
+.prose > pre {
+	border-radius: 14px;
+	background: var(--tint) !important;
+	box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.prose pre code {
+	font: inherit;
+}
+
+/* Monochrome highlighting: hierarchy by weight and slant, not hue. */
+.prose pre span[style*="token-keyword"] {
+	font-weight: 650;
+}
+
+.prose pre span[style*="token-comment"] {
+	font-style: italic;
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+.prose .table-scroll {
+	overflow-x: auto;
+}
+
+.prose table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+}
+
+.prose th {
+	padding: 0 16px 10px 0;
+	border-bottom: 1px solid var(--fg);
+	font-family: var(--font-mono);
+	font-size: 0.6875rem;
+	font-weight: 500;
+	letter-spacing: 0.08em;
+	text-align: left;
+	text-transform: uppercase;
+	color: var(--fg-2);
+	white-space: nowrap;
+}
+
+.prose td {
+	padding: 12px 16px 12px 0;
+	border-bottom: 1px solid var(--line);
+	vertical-align: top;
+}
+
+/* ── The end ─────────────────────────────────────────────────────────────── */
+
+.prose .end {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-top: 4em;
+	font-family: var(--font-mono);
+	font-size: 0.6875rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--fg-2);
+}
+
+.prose .end .seal {
+	width: 14px;
+	height: 14px;
+}
+
+/* ── Image zoom ──────────────────────────────────────────────────────────── */
+
+.zoom {
+	position: fixed;
+	inset: 0;
+	z-index: 90;
+	display: grid;
+	place-items: center;
+	padding: clamp(16px, 4vw, 56px);
+	background: color-mix(in srgb, var(--paper) 86%, transparent);
+	-webkit-backdrop-filter: blur(18px);
+	backdrop-filter: blur(18px);
+	opacity: 0;
+	cursor: zoom-out;
+	transition: opacity 0.4s var(--ease-out);
+}
+
+.zoom img {
+	max-width: 100%;
+	max-height: 100%;
+	border-radius: 10px;
+	box-shadow: 0 40px 80px -30px color-mix(in srgb, #000 50%, transparent);
+	transform: scale(0.94);
+	transition: transform 0.6s var(--ease-out);
+}
+
+.zoom.is-open {
+	opacity: 1;
+}
+
+.zoom.is-open img {
+	transform: none;
+}

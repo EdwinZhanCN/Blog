@@ -1,0 +1,38 @@
+---
+import Footer from "../components/Footer.astro";
+import Head from "../components/Head.astro";
+import Nav from "../components/Nav.astro";
+
+interface Props {
+	title: string;
+	description: string;
+	image?: string;
+	type?: "website" | "article";
+	/** Home: live painting behind the page, full-screen footer. */
+	field?: boolean;
+	lang?: string;
+}
+
+const { title, description, image, type, field = false, lang = "en" } = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang}>
+	<head>
+		<Head title={title} description={description} image={image} type={type} />
+		<slot name="head" />
+	</head>
+	<body>
+		<a class="skip" href="#main">Skip to content</a>
+		{field && <canvas class="field" data-field aria-hidden="true" />}
+		<Nav />
+		<main id="main">
+			<slot />
+		</main>
+		<Footer tall={field} />
+		<div class="peek" data-peek-frame aria-hidden="true"><canvas data-size="300"></canvas></div>
+		<script>
+			import "../scripts/app.ts";
+		</script>
+	</body>
+</html>

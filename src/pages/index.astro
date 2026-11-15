@@ -1,354 +1,511 @@
 ---
 import { getCollection } from "astro:content";
-import BaseHead from "../components/BaseHead.astro";
-import Footer from "../components/Footer.astro";
-import Header from "../components/Header.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
-import { formatGroupName, getPostGroupName, getPostHref } from "../utils/blog";
+import PostRow from "../components/PostRow.astro";
+import { PLAYLISTS, QUESTION, SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import Base from "../layouts/Base.astro";
+import {
+	getGroupHref,
+	getPostGroupName,
+	getPostHref,
+	getPublishedPosts,
+	groupPosts,
+	seedFor,
+	sortPostsByDate,
+	splitTitle,
+} from "../utils/blog";
 
-const posts = (await getCollection("blog")).filter((post) => !post.data.draft);
-const dateFormatter = new Intl.DateTimeFormat("en-us", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-});
-const noteSlots = [
-    { left: 0, top: 9, width: 32, rotation: [-8, -3] },
-    { left: 33, top: 1, width: 31, rotation: [2, 7] },
-    { left: 65, top: 12, width: 30, rotation: [-5, 4] },
-    { left: 11, top: 45, width: 34, rotation: [3, 9] },
-    { left: 49, top: 42, width: 36, rotation: [-9, -3] },
-];
-const noteTints = ["#dff3ff", "#fff0c9", "#e8f7dd", "#ffe0ea", "#e7e6ff"];
-const featuredPlaylists = [
-    {
-        id: "2026-s",
-        side: "A",
-        src: "https://embed.music.apple.com/us/playlist/2026-s/pl.u-pMyllEmcWBV25My",
-        title: "2026's",
-        year: "2026",
-    },
-    {
-        id: "2025-s",
-        side: "B",
-        src: "https://embed.music.apple.com/cn/playlist/2025-s/pl.u-qxylKqDI3jagdpJ?l=en",
-        title: "2025's",
-        year: "2025",
-    },
-] as const;
-const defaultPlaylist = featuredPlaylists[0];
-
-function randomBetween(min: number, max: number) {
-    return min + Math.random() * (max - min);
-}
-
-function shuffle<T>(items: T[]) {
-    const result = [...items];
-
-    for (let index = result.length - 1; index > 0; index -= 1) {
-        const swapIndex = Math.floor(Math.random() * (index + 1));
-        [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
-    }
-
-    return result;
-}
-
-const threadPosts = posts.map((post) => ({
-    description: post.data.description,
-    displayDate: dateFormatter.format(post.data.pubDate),
-    groupLabel: formatGroupName(getPostGroupName(post)),
-    href: getPostHref(post),
-    pubDate: post.data.pubDate.toISOString(),
-    title: post.data.title,
-}));
-
-const currentThreads = shuffle(threadPosts)
-    .slice(0, 5)
-    .map((thread, index) => {
-        const slot = noteSlots[index % noteSlots.length];
-        const [minRotation, maxRotation] = slot.rotation;
-
-        return {
-            thread,
-            style: [
-                `--note-left: ${randomBetween(slot.left - 1.8, slot.left + 1.8).toFixed(2)}%`,
-                `--note-top: ${randomBetween(slot.top - 2.2, slot.top + 2.2).toFixed(2)}%`,
-                `--note-width: ${slot.width}%`,
-                `--note-rotate: ${randomBetween(minRotation, maxRotation).toFixed(2)}deg`,
-                `--note-z: ${index + 1}`,
-                `--note-tint: ${noteTints[index % noteTints.length]}`,
-            ].join("; "),
-        };
-    });
+const posts = sortPostsByDate(getPublishedPosts(await getCollection("blog")));
+const groups = groupPosts(posts);
+// The newest note from each series first, so the front page shows the breadth, then whatever is next.
+const leads = groups.map((group) => posts.find((post) => getPostGroupName(post) === group.name)!);
+const latest = [...leads, ...posts.filter((post) => !leads.includes(post))].slice(0, 6);
+const newest = latest[0];
+const first = PLAYLISTS[0];
 ---
 
-<!doctype html>
-<html lang="en">
-    <head>
-        <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-    </head>
-    <body>
-        <Header />
-        <main class="page-shell">
-            <section class="page-hero">
-                <p class="eyebrow">Personal Blog</p>
-                <h1>Where are the crossroads of humanity and tech?</h1>
-                <div class="page-actions">
-                    <a class="button-link" href="/blog">Read the blog</a>
-                    <a class="button-link secondary" href="/about">About</a>
-                </div>
-            </section>
+<Base title={SITE_TITLE} description={SITE_DESCRIPTION} field>
+	<section class="hero" data-hero>
+		<div class="hero-top wrap blend">
+			<p class="label" data-reveal data-delay="0.9">Notebook of Edwin Zhan</p>
+			<p class="label" data-reveal data-delay="0.9">N° <span data-seed>00000</span></p>
+		</div>
 
-            <section
-                class="page-section current-threads-section"
-                aria-labelledby="current-threads-heading"
-            >
-                <div class="section-header-row">
-                    <div>
-                        <p class="eyebrow">Current Threads</p>
-                        <h2
-                            id="current-threads-heading"
-                            class="section-heading"
-                        >
-                            Notes on the desk.
-                        </h2>
-                    </div>
-                    <button
-                        class="button-link secondary refresh-threads-button"
-                        type="button"
-                        data-refresh-threads
-                    >
-                        Refresh
-                    </button>
-                </div>
-                <ul class="thread-desk">
-                    {
-                        currentThreads.map(({ thread, style }) => (
-                            <li style={style}>
-                                <a class="thread-note-card" href={thread.href}>
-                                    <p class="post-meta">
-                                        {thread.groupLabel} ·{" "}
-                                        <time datetime={thread.pubDate}>
-                                            {thread.displayDate}
-                                        </time>
-                                    </p>
-                                    <h3>{thread.title}</h3>
-                                    <p>{thread.description}</p>
-                                    <span class="thread-note-link">
-                                        Read note
-                                    </span>
-                                </a>
-                            </li>
-                        ))
-                    }
-                </ul>
-            </section>
+		<p class="void-note label blend" data-reveal data-delay="2.4" aria-hidden="true">
+			<span></span>Nothing is drawn here.
+		</p>
 
-            <section
-                class="page-section playlist-section"
-                aria-labelledby="featured-playlist-heading"
-            >
-                <div class="playlist-shell">
-                    <div class="playlist-vinyl-panel">
-                        <p class="eyebrow">Featured Playlist</p>
-                        <h2
-                            id="featured-playlist-heading"
-                            class="section-heading"
-                        >
-                            Flip the record.
-                        </h2>
-                        <button
-                            class="playlist-vinyl-button"
-                            type="button"
-                            data-playlist-toggle
-                            aria-label={`Flip to ${featuredPlaylists[1].title}`}
-                        >
-                            <span class="playlist-vinyl-stack" aria-hidden="true">
-                                <span class="playlist-sleeve"></span>
-                                <span class="playlist-vinyl-disc">
-                                    <span class="playlist-vinyl-rings"></span>
-                                    <span class="playlist-vinyl-center">
-                                        <span data-playlist-side>
-                                            Side {defaultPlaylist.side}
-                                        </span>
-                                        <strong data-playlist-year>
-                                            {defaultPlaylist.year}
-                                        </strong>
-                                    </span>
-                                </span>
-                            </span>
-                        </button>
-                        <p class="playlist-mini-copy">
-                            <span data-playlist-current-title>
-                                {defaultPlaylist.title}
-                            </span>
-                            <span>Tap the vinyl to switch sides.</span>
-                        </p>
-                    </div>
-                    <div class="playlist-frame-wrap">
-                        <div class="playlist-player-shell">
-                            <p class="playlist-player-meta">
-                                <span data-playlist-meta-side>
-                                    Side {defaultPlaylist.side}
-                                </span>
-                                <strong data-playlist-meta-title>
-                                    {defaultPlaylist.title}
-                                </strong>
-                            </p>
-                            <iframe
-                                title={`Apple Music playlist: ${defaultPlaylist.title}`}
-                                allow="autoplay *; encrypted-media *;"
-                                frameborder="0"
-                                height="450"
-                                loading="lazy"
-                                style="width:100%;max-width:660px;overflow:hidden;background:transparent;"
-                                sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
-                                src={defaultPlaylist.src}
-                                data-playlist-frame
-                            ></iframe>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-        <Footer />
-        <script
-            define:vars={{ featuredPlaylists, noteSlots, noteTints, threadPosts }}
-        >
-            const desk = document.querySelector(".thread-desk");
-            const refreshButton = document.querySelector(
-                "[data-refresh-threads]",
-            );
-            const playlistFrame = document.querySelector("[data-playlist-frame]");
-            const playlistToggle = document.querySelector(
-                "[data-playlist-toggle]",
-            );
-            const playlistSide = document.querySelector("[data-playlist-side]");
-            const playlistYear = document.querySelector("[data-playlist-year]");
-            const playlistCurrentTitle = document.querySelector(
-                "[data-playlist-current-title]",
-            );
-            const playlistMetaSide = document.querySelector(
-                "[data-playlist-meta-side]",
-            );
-            const playlistMetaTitle = document.querySelector(
-                "[data-playlist-meta-title]",
-            );
-            let activePlaylistIndex = 0;
+		<div class="hero-main wrap blend">
+			<h1 class="hero-title" data-reveal="words" data-delay="0.25">
+				Where are the<br />
+				crossroads of<br />
+				<em class="serif">humanity</em> and <span class="hero-tech">tech</span>?
+			</h1>
+			<div class="hero-foot">
+				<p class="hero-answer" data-reveal data-delay="1.5">
+					<span class="label">Answer</span>
+					{QUESTION.answer}
+				</p>
+				<div class="hero-meta label" data-reveal data-delay="1.8">
+					<button type="button" data-repaint aria-label="Paint this page again from a new seed">
+						Repaint <kbd>R</kbd>
+					</button>
+					<span class="hero-scroll">Scroll</span>
+				</div>
+			</div>
+		</div>
+	</section>
 
-            function randomBetween(min, max) {
-                return min + Math.random() * (max - min);
-            }
+	<section class="section wrap" aria-labelledby="now">
+		<div class="split">
+			<h2 class="label split-label" id="now">01 — Now <span class="now-dot" aria-hidden="true"></span></h2>
+			<div class="split-body">
+				<p class="statement" data-scrub>
+					I’m Edwin. I study computer science at RPI, and I build software for machines that live at
+					home: inference that runs locally, photo libraries that stay yours, agents that remember.
+					<span class="statement-quiet">Before any of that, I drew.</span>
+				</p>
+				<dl class="facts">
+					<div data-reveal>
+						<dt class="label">Building</dt>
+						<dd>
+							{
+								groups
+									.filter((group) => ["lumen", "lumilio-photos"].includes(group.slug))
+									.map((group) => <a href={getGroupHref(group.name)}>{group.label}</a>)
+							}
+						</dd>
+					</div>
+					<div data-reveal data-delay="0.08">
+						<dt class="label">Thinking about</dt>
+						<dd>Fast software, distributed systems, memory for agents</dd>
+					</div>
+					{
+						newest && (
+							<div data-reveal data-delay="0.16">
+								<dt class="label">Latest note</dt>
+								<dd>
+									<a href={getPostHref(newest)}>{splitTitle(newest.data.title).main}</a>
+								</dd>
+							</div>
+						)
+					}
+				</dl>
+			</div>
+		</div>
+	</section>
 
-            function shuffle(items) {
-                const result = [...items];
+	<section class="section wrap" aria-labelledby="writing">
+		<div class="section-head">
+			<h2 class="label" id="writing">02 — Writing</h2>
+			<a class="label arrow-link" href="/blog/">All {posts.length} notes <span aria-hidden="true">→</span></a>
+		</div>
+		<div class="rows">
+			{latest.map((post, index) => <PostRow post={post} index={index + 1} />)}
+		</div>
+	</section>
 
-                for (let index = result.length - 1; index > 0; index -= 1) {
-                    const swapIndex = Math.floor(Math.random() * (index + 1));
-                    [result[index], result[swapIndex]] = [
-                        result[swapIndex],
-                        result[index],
-                    ];
-                }
+	<section class="section wrap" aria-labelledby="series">
+		<div class="section-head">
+			<h2 class="label" id="series">03 — Series</h2>
+			<p class="label">Every painting is grown from its name</p>
+		</div>
+		<div class="tiles">
+			{
+				groups.map((group) => (
+					<a class="tile" href={getGroupHref(group.name)} data-reveal>
+						<div class="sheet">
+							<canvas data-cover={seedFor(group.slug)} aria-hidden="true" />
+						</div>
+						<div class="tile-text blend">
+							<h3 class="tile-name">{group.label}</h3>
+							<p class="tile-count">
+								{String(group.posts.length).padStart(2, "0")} {group.posts.length === 1 ? "note" : "notes"}
+							</p>
+						</div>
+					</a>
+				))
+			}
+		</div>
+	</section>
 
-                return result;
-            }
+	<section class="section wrap" aria-labelledby="listening">
+		<div class="section-head">
+			<h2 class="label" id="listening">04 — Listening</h2>
+			<p class="label">Side <span data-record-side>{first.side}</span> · <span data-record-title>{first.title}</span></p>
+		</div>
+		<div class="listening">
+			<div class="listening-copy">
+				<p class="headline" data-reveal="words">Flip the <em class="serif">record.</em></p>
+				<button
+					class="record"
+					type="button"
+					data-record={JSON.stringify(PLAYLISTS)}
+					aria-label={`Flip to side ${PLAYLISTS[1].side}: ${PLAYLISTS[1].title}`}
+				>
+					<span class="record-disc" aria-hidden="true">
+						<span class="record-label">
+							<span class="label">Side <span data-record-side>{first.side}</span></span>
+							<strong data-record-year>{first.year}</strong>
+						</span>
+					</span>
+				</button>
+			</div>
+			<div class="listening-player" data-reveal>
+				<iframe
+					title={`Apple Music playlist: ${first.title}`}
+					allow="autoplay *; encrypted-media *;"
+					height="450"
+					loading="lazy"
+					sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
+					src={first.src}
+					data-record-frame></iframe>
+			</div>
+		</div>
+	</section>
+</Base>
 
-            function getNoteStyle(index) {
-                const slot = noteSlots[index % noteSlots.length];
-                const [minRotation, maxRotation] = slot.rotation;
+<style>
+	/* ── Hero ───────────────────────────────────────────────────────────── */
 
-                return [
-                    `--note-left: ${randomBetween(slot.left - 1.8, slot.left + 1.8).toFixed(2)}%`,
-                    `--note-top: ${randomBetween(slot.top - 2.2, slot.top + 2.2).toFixed(2)}%`,
-                    `--note-width: ${slot.width}%`,
-                    `--note-rotate: ${randomBetween(minRotation, maxRotation).toFixed(2)}deg`,
-                    `--note-z: ${index + 1}`,
-                    `--note-tint: ${noteTints[index % noteTints.length]}`,
-                ].join("; ");
-            }
+	.hero {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		min-height: 100svh;
+		padding-top: calc(var(--nav-top) + var(--nav-h) + 22px);
+		padding-bottom: clamp(20px, 3vw, 36px);
+	}
 
-            function createThreadCard(thread, index) {
-                const item = document.createElement("li");
-                const link = document.createElement("a");
-                const meta = document.createElement("p");
-                const time = document.createElement("time");
-                const title = document.createElement("h3");
-                const description = document.createElement("p");
-                const readNote = document.createElement("span");
+	.hero-top {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+	}
 
-                item.setAttribute("style", getNoteStyle(index));
-                link.className = "thread-note-card";
-                link.href = thread.href;
-                meta.className = "post-meta";
-                time.dateTime = thread.pubDate;
-                time.textContent = thread.displayDate;
-                title.textContent = thread.title;
-                description.textContent = thread.description;
-                readNote.className = "thread-note-link";
-                readNote.textContent = "Read note";
+	.hero-top .label,
+	.hero-meta,
+	.hero-answer .label {
+		color: inherit;
+	}
 
-                meta.append(thread.groupLabel, " · ", time);
-                link.append(meta, title, description, readNote);
-                item.append(link);
+	.void-note {
+		color: #fff;
+	}
 
-                return item;
-            }
+	.hero-title {
+		font-size: clamp(2.75rem, 8.6vw, 9.25rem);
+		font-weight: 600;
+		line-height: 0.93;
+		letter-spacing: -0.052em;
+	}
 
-            refreshButton?.addEventListener("click", () => {
-                if (!desk) return;
+	.hero-title em {
+		font-weight: 380;
+		letter-spacing: -0.045em;
+		padding-right: 0.04em;
+	}
 
-                const nextThreads = shuffle(threadPosts).slice(0, 5);
-                desk.replaceChildren(
-                    ...nextThreads.map((thread, index) =>
-                        createThreadCard(thread, index),
-                    ),
-                );
-            });
+	/* "humanity" is set by hand, "tech" by machine. */
+	.hero-tech {
+		font-family: var(--font-mono);
+		font-weight: 420;
+		font-size: 0.84em;
+		letter-spacing: -0.085em;
+	}
 
-            function setActivePlaylist(index) {
-                const nextPlaylist = featuredPlaylists[index];
-                const upcomingPlaylist =
-                    featuredPlaylists[(index + 1) % featuredPlaylists.length];
+	.hero-foot {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 24px;
+		margin-top: clamp(24px, 3.4vw, 48px);
+	}
 
-                if (!nextPlaylist || !playlistFrame) return;
+	.hero-answer {
+		display: flex;
+		align-items: baseline;
+		gap: 14px;
+		font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+		letter-spacing: -0.025em;
+	}
 
-                activePlaylistIndex = index;
-                playlistFrame.src = nextPlaylist.src;
-                playlistFrame.title = `Apple Music playlist: ${nextPlaylist.title}`;
-                playlistToggle?.classList.toggle("is-b-side", index === 1);
-                playlistToggle?.setAttribute(
-                    "aria-label",
-                    `Flip to ${upcomingPlaylist.title}`,
-                );
+	.hero-meta {
+		display: flex;
+		align-items: center;
+		gap: 22px;
+	}
 
-                if (playlistSide) {
-                    playlistSide.textContent = `Side ${nextPlaylist.side}`;
-                }
+	.hero-meta button {
+		text-transform: inherit;
+		letter-spacing: inherit;
+	}
 
-                if (playlistYear) {
-                    playlistYear.textContent = nextPlaylist.year;
-                }
+	.hero-meta kbd {
+		display: inline-grid;
+		place-items: center;
+		width: 18px;
+		height: 18px;
+		margin-left: 6px;
+		border: 1px solid currentColor;
+		border-radius: 4px;
+		font: inherit;
+		font-size: 0.625rem;
+		letter-spacing: 0;
+	}
 
-                if (playlistCurrentTitle) {
-                    playlistCurrentTitle.textContent = nextPlaylist.title;
-                }
+	.hero-scroll {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
 
-                if (playlistMetaSide) {
-                    playlistMetaSide.textContent = `Side ${nextPlaylist.side}`;
-                }
+	.hero-scroll::after {
+		content: "";
+		width: 1px;
+		height: 34px;
+		background: currentColor;
+		transform-origin: top;
+		animation: drip 2.6s var(--ease-in-out) infinite;
+	}
 
-                if (playlistMetaTitle) {
-                    playlistMetaTitle.textContent = nextPlaylist.title;
-                }
-            }
+	@keyframes drip {
+		0% {
+			transform: scaleY(0);
+		}
+		55% {
+			transform: scaleY(1);
+			transform-origin: top;
+		}
+		56% {
+			transform-origin: bottom;
+		}
+		100% {
+			transform: scaleY(0);
+			transform-origin: bottom;
+		}
+	}
 
-            playlistToggle?.addEventListener("click", () => {
-                const nextIndex =
-                    (activePlaylistIndex + 1) % featuredPlaylists.length;
-                setActivePlaylist(nextIndex);
-            });
-        </script>
-    </body>
-</html>
+	/* A museum label for the one place the ink never goes. */
+	.void-note {
+		position: absolute;
+		left: calc(var(--void-x, 70vw) + var(--void-r, 12vw) * 0.7071);
+		top: calc(var(--void-y, 42vh) + var(--void-r, 12vw) * 0.7071);
+		display: flex;
+		align-items: flex-end;
+		white-space: nowrap;
+	}
+
+	.void-note span {
+		width: 44px;
+		height: 44px;
+		margin-right: 10px;
+		margin-bottom: 0.55em;
+		background: linear-gradient(
+			to top right,
+			transparent calc(50% - 0.5px),
+			currentColor calc(50% - 0.5px),
+			currentColor calc(50% + 0.5px),
+			transparent calc(50% + 0.5px)
+		);
+		transform: scaleY(-1);
+	}
+
+	:global(.no-field) .void-note {
+		display: none;
+	}
+
+	@media (max-width: 860px) {
+		.hero-meta button {
+			display: none;
+		}
+
+		/* No room for a leader line on a phone: the label sits under the circle instead. */
+		.void-note {
+			left: var(--void-x, 60vw);
+			top: calc(var(--void-y, 30vh) + var(--void-r, 20vw) + 12px);
+			translate: -50% 0;
+		}
+
+		.void-note span {
+			display: none;
+		}
+	}
+
+	/* ── Now ────────────────────────────────────────────────────────────── */
+
+	/* The page's one vermilion mark: this part is current. */
+	.now-dot {
+		display: inline-block;
+		width: 7px;
+		height: 7px;
+		margin-left: 8px;
+		border-radius: 50%;
+		background: var(--seal);
+		animation: breathe 3.2s ease-in-out infinite;
+	}
+
+	@keyframes breathe {
+		50% {
+			opacity: 0.35;
+		}
+	}
+
+	.statement {
+		max-width: 22em;
+		font-size: clamp(1.75rem, 4.1vw, 3.75rem);
+		font-weight: 600;
+		line-height: 1.06;
+		letter-spacing: -0.042em;
+	}
+
+	.statement-quiet {
+		font-family: var(--font-serif);
+		font-style: italic;
+		font-weight: 400;
+		letter-spacing: -0.03em;
+	}
+
+	.facts {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 28px clamp(16px, 2vw, 28px);
+		margin-top: clamp(48px, 7vw, 104px);
+	}
+
+	.facts > div {
+		padding-top: 14px;
+		border-top: 1px solid var(--line-strong);
+	}
+
+	.facts dd {
+		margin-top: 10px;
+		font-size: 1.0625rem;
+		line-height: 1.35;
+		letter-spacing: -0.015em;
+		text-wrap: balance;
+	}
+
+	.facts a {
+		background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat;
+	}
+
+	.facts a:hover {
+		color: var(--fg-2);
+	}
+
+	.facts a + a::before {
+		content: ", ";
+	}
+
+	@media (max-width: 700px) {
+		.facts {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	/* ── Listening ──────────────────────────────────────────────────────── */
+
+	.listening {
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+		align-items: center;
+		gap: clamp(32px, 5vw, 80px);
+		padding-top: clamp(40px, 6vw, 80px);
+	}
+
+	.listening-copy {
+		display: grid;
+		gap: clamp(28px, 4vw, 56px);
+	}
+
+	/* A record is a disc of ink with a perfect hole in it. */
+	.record {
+		--flip: 0deg;
+		width: min(100%, 420px);
+		aspect-ratio: 1;
+		perspective: 1400px;
+		border-radius: 50%;
+	}
+
+	.record-disc {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		background:
+			repeating-radial-gradient(
+				circle,
+				transparent 0 2px,
+				color-mix(in srgb, var(--paper) 9%, transparent) 2px 3px
+			),
+			conic-gradient(
+				from 40deg,
+				var(--ink),
+				color-mix(in oklab, var(--ink) 78%, var(--paper)) 12%,
+				var(--ink) 26%,
+				var(--ink) 50%,
+				color-mix(in oklab, var(--ink) 78%, var(--paper)) 62%,
+				var(--ink) 76%
+			);
+		transform: rotateY(var(--flip));
+		transition: transform 1.1s var(--ease-in-out);
+		animation: spin 14s linear infinite;
+		animation-composition: add;
+	}
+
+	.record:hover .record-disc {
+		animation-duration: 5s;
+	}
+
+	.record-label {
+		display: grid;
+		place-items: center;
+		align-content: center;
+		gap: 2px;
+		width: 38%;
+		aspect-ratio: 1;
+		border-radius: 50%;
+		background: var(--paper);
+		color: var(--fg);
+	}
+
+	.record-label strong {
+		font-size: clamp(1.25rem, 2.4vw, 2rem);
+		font-weight: 600;
+		letter-spacing: -0.04em;
+		line-height: 1;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.listening-player {
+		overflow: hidden;
+		border-radius: 20px;
+		box-shadow: inset 0 0 0 1px var(--line);
+		background: var(--tint);
+	}
+
+	.listening-player iframe {
+		display: block;
+		width: 100%;
+		border: 0;
+		background: transparent;
+	}
+
+	@media (max-width: 860px) {
+		.listening {
+			grid-template-columns: 1fr;
+		}
+
+		.record {
+			width: min(72%, 320px);
+		}
+	}
+</style>

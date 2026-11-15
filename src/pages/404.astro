@@ -1,0 +1,25 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Not found" description="There is nothing at this address.">
+	<div class="page wrap lost">
+		<p class="label" data-reveal>404</p>
+		<h1 class="page-title" data-reveal="words">Nothing is<br />drawn <span class="serif">here.</span></h1>
+		<p class="page-lede" data-reveal data-delay="0.3">The page you were looking for was moved, renamed, or never painted.</p>
+		<p data-reveal data-delay="0.45"><a class="pill" href="/">Back to the start</a> <a class="pill ghost" href="/blog/">Read the notes</a></p>
+	</div>
+</Base>
+
+<style>
+	.lost {
+		display: grid;
+		gap: 28px;
+		min-height: 70svh;
+		align-content: center;
+	}
+
+	.lost .pill + .pill {
+		margin-left: 8px;
+	}
+</style>

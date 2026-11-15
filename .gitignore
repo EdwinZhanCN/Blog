@@ -30,3 +30,10 @@ pnpm-debug.log*
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# obsidian vault config (per-machine)
+.obsidian/
+
+# npm is the package manager here (Cloudflare builds with it)
+pnpm-lock.yaml
+pnpm-workspace.yaml

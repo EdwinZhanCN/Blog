@@ -1,231 +1,128 @@
 ---
-import BaseHead from "../components/BaseHead.astro";
-import Footer from "../components/Footer.astro";
-import Header from "../components/Header.astro";
-import { SITE_TITLE } from "../consts";
+import Base from "../layouts/Base.astro";
 
 type Resource = {
-    title: string;
-    description: string;
-    href: string;
-    category: string;
-    fileType: string;
-    size?: string;
-    updated?: string;
+	title: string;
+	description: string;
+	href: string;
+	category: string;
+	fileType: string;
+	size?: string;
+	updated?: string;
 };
 
-const title = `Resources · ${SITE_TITLE}`;
-const description =
-    "Downloadable resources, project files, and external artifacts linked from the blog.";
+// Add a file here and it appears on the shelf.
 const resources: Resource[] = [
-    {
-        title: "Enhanced Vanilla Minecraft Modpack",
-        description:
-            "A Minecraft server modpack for the Enhanced Vanilla setup.",
-        href: "https://edwinzhan.space/Ehanced-Vanilla.mrpack",
-        category: "Minecraft Server",
-        fileType: "MRPACK",
-    },
+	{
+		title: "Enhanced Vanilla Minecraft Modpack",
+		description: "A Minecraft server modpack for the Enhanced Vanilla setup.",
+		href: "https://edwinzhan.space/Ehanced-Vanilla.mrpack",
+		category: "Minecraft Server",
+		fileType: "MRPACK",
+	},
 ];
 ---
 
-<!doctype html>
-<html lang="en">
-    <head>
-        <BaseHead title={title} description={description} />
-        <style>
-            .resources-hero {
-                border-bottom: 1px solid var(--site-border);
-                display: grid;
-                gap: 22px;
-                padding-bottom: clamp(42px, 6vw, 72px);
-            }
+<Base title="Resources" description="Downloadable resources, project files, and external artifacts linked from the blog.">
+	<div class="page wrap">
+		<header class="page-head">
+			<p class="label" data-reveal>Resources · {String(resources.length).padStart(2, "0")} on the shelf</p>
+			<h1 class="page-title" data-reveal="words">Take <span class="serif">one.</span></h1>
+			<p class="page-lede" data-reveal data-delay="0.3">Files and artifacts that belong to the notes, kept where you can reach them.</p>
+		</header>
 
-            .resources-hero h1 {
-                color: var(--site-heading);
-                font-size: clamp(3.1rem, 8vw, 7.2rem);
-                font-weight: 790;
-                letter-spacing: 0;
-                line-height: 0.94;
-                margin: 0;
-                max-width: 850px;
-            }
+		<ul class="shelf">
+			{
+				resources.map((resource, index) => (
+					<li data-reveal>
+						<a class="shelf-item" href={resource.href} download>
+							<span class="label">{String(index + 1).padStart(2, "0")}</span>
+							<span>
+								<span class="shelf-title">{resource.title}</span>
+								<span class="shelf-desc">{resource.description}</span>
+							</span>
+							<span class="label">
+								{resource.category}
+								{resource.size && ` · ${resource.size}`}
+								{resource.updated && ` · ${resource.updated}`}
+							</span>
+							<span class="shelf-get">
+								<span class="label">{resource.fileType}</span>
+								<span class="shelf-arrow" aria-hidden="true">↓</span>
+							</span>
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</Base>
 
-            .resource-shelf {
-                display: grid;
-                gap: 18px;
-                grid-template-columns: repeat(12, 1fr);
-                list-style: none;
-                margin: 0;
-                padding: 0;
-            }
+<style>
+	.shelf {
+		border-top: 1px solid var(--line-strong);
+	}
 
-            .resource-shelf > li {
-                grid-column: span 6;
-            }
+	.shelf-item {
+		display: grid;
+		grid-template-columns: 3.5rem minmax(0, 1fr) 12rem auto;
+		align-items: center;
+		column-gap: clamp(12px, 2vw, 28px);
+		padding: clamp(22px, 3vw, 40px) 0;
+		border-bottom: 1px solid var(--line);
+	}
 
-            .resource-card,
-            .resources-empty {
-                background: linear-gradient(
-                    180deg,
-                    color-mix(in srgb, var(--site-surface) 96%, #dff3ff),
-                    var(--site-surface)
-                );
-                border: 1px solid var(--site-border);
-                border-radius: 8px;
-                color: var(--site-text);
-                display: grid;
-                min-height: 240px;
-                overflow: hidden;
-                padding: 24px;
-                position: relative;
-                text-decoration: none;
-            }
+	.shelf-title {
+		display: block;
+		font-size: clamp(1.375rem, 2.8vw, 2.5rem);
+		font-weight: 600;
+		line-height: 1.08;
+		letter-spacing: -0.04em;
+		text-wrap: balance;
+	}
 
-            .resource-card {
-                gap: 18px;
-                transition:
-                    background-color 160ms ease,
-                    border-color 160ms ease,
-                    box-shadow 160ms ease;
-            }
+	.shelf-desc {
+		display: block;
+		margin-top: 8px;
+		color: var(--fg-2);
+	}
 
-            .resource-card::before,
-            .resources-empty::before {
-                background: var(--site-heading);
-                content: "";
-                height: 4px;
-                left: 0;
-                position: absolute;
-                right: 0;
-                top: 0;
-            }
+	.shelf-get {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+	}
 
-            .resource-card:hover {
-                border-color: var(--site-border-strong);
-                box-shadow: 0 18px 46px rgba(15, 18, 25, 0.08);
-            }
+	.shelf-arrow {
+		display: grid;
+		place-items: center;
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background: var(--ink);
+		color: var(--paper);
+		font-size: 1.125rem;
+		transition: transform 0.6s var(--ease-out);
+	}
 
-            .resource-card h2,
-            .resources-empty h2 {
-                color: var(--site-heading);
-                font-size: clamp(1.55rem, 3vw, 2.35rem);
-                letter-spacing: 0;
-                line-height: 1.04;
-                margin: 0;
-            }
+	.shelf-item:hover .shelf-arrow {
+		transform: translateY(5px);
+	}
 
-            .resource-card p,
-            .resources-empty p {
-                color: var(--site-muted);
-                margin: 0;
-            }
+	@media (max-width: 860px) {
+		.shelf-item {
+			grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+			row-gap: 10px;
+		}
 
-            .resource-card-meta {
-                align-items: center;
-                color: var(--site-soft);
-                display: flex;
-                flex-wrap: wrap;
-                font-size: 0.82rem;
-                font-weight: 760;
-                gap: 8px;
-                letter-spacing: 0.08em;
-                margin-top: auto;
-                text-transform: uppercase;
-            }
+		.shelf-item > .label:nth-child(3) {
+			grid-column: 2;
+			grid-row: 2;
+		}
 
-            .resource-card-action {
-                color: var(--site-heading);
-                font-weight: 760;
-                margin-top: auto;
-            }
-
-            .resources-empty {
-                gap: 14px;
-                grid-column: 1 / -1;
-                min-height: 320px;
-            }
-
-            .resources-empty code {
-                justify-self: start;
-            }
-
-            @media (max-width: 760px) {
-                .resources-hero h1 {
-                    font-size: clamp(2.8rem, 15vw, 4.6rem);
-                }
-
-                .resource-shelf {
-                    grid-template-columns: 1fr;
-                }
-
-                .resource-shelf > li {
-                    grid-column: auto;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <Header />
-        <main class="page-shell">
-            <section class="resources-hero">
-                <p class="eyebrow">Resources</p>
-                <h1>On the road.</h1>
-                <p class="lead">
-                    Project assets, release artifacts, and game resources.
-                </p>
-            </section>
-
-            <section class="page-section" aria-label="Downloadable resources">
-                {
-                    resources.length > 0 ? (
-                        <ul class="resource-shelf">
-                            {resources.map((resource) => (
-                                <li>
-                                    <a
-                                        class="resource-card"
-                                        href={resource.href}
-                                        rel="noopener noreferrer"
-                                        target="_blank"
-                                    >
-                                        <p class="post-meta">
-                                            {resource.category}
-                                        </p>
-                                        <h2>{resource.title}</h2>
-                                        <p>{resource.description}</p>
-                                        <div class="resource-card-meta">
-                                            <span>{resource.fileType}</span>
-                                            {resource.size && (
-                                                <span>{resource.size}</span>
-                                            )}
-                                            {resource.updated && (
-                                                <span>
-                                                    Updated {resource.updated}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span class="resource-card-action">
-                                            Open download
-                                        </span>
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <div class="resources-empty">
-                            <p class="post-meta">No files published yet</p>
-                            <h2>R2-backed downloads will appear here.</h2>
-                            <p>
-                                Add Cloudflare R2 public links to the resources
-                                array in this page when a resource is ready to
-                                share.
-                            </p>
-                            <code>src/pages/resources.astro</code>
-                        </div>
-                    )
-                }
-            </section>
-        </main>
-        <Footer />
-    </body>
-</html>
+		.shelf-get {
+			grid-row: 1;
+			grid-column: 3;
+		}
+	}
+</style>
