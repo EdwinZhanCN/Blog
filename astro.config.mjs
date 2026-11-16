@@ -2,7 +2,6 @@
 
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
-import cloudflare from "@astrojs/cloudflare";
 import { defineConfig } from "astro/config";
 import { remarkCallouts } from "./src/lib/markdown/callouts.mjs";
 import { codeFrame } from "./src/lib/markdown/code-frame.mjs";
@@ -20,5 +19,4 @@ export default defineConfig({
 			transformers: [codeFrame()],
 		},
 	},
-	adapter: cloudflare(),
 });

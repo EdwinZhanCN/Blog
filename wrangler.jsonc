@@ -1,11 +1,10 @@
 {
-	"compatibility_date": "2026-05-03",
-	"compatibility_flags": ["global_fetch_strictly_public"],
+	// Static site: Workers serves dist/ as plain assets, no Worker script.
 	"name": "blog",
-	"main": "@astrojs/cloudflare/entrypoints/server",
+	"compatibility_date": "2026-05-03",
 	"assets": {
 		"directory": "./dist",
-		"binding": "ASSETS"
+		"not_found_handling": "404-page"
 	},
 	"observability": {
 		"enabled": true
