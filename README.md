@@ -29,12 +29,13 @@ Obsidian callouts (`> [!note] Title`) and code titles (` ```ts title="file.ts" `
 
 ```text
 src/
-├── consts.ts            site title, nav, links, playlists, status wording
+├── consts.ts            site title, nav, links, status wording
 ├── content/blog/        the notes; one folder per series
 ├── lib/ink/             the painting
 │   ├── glsl.ts          the shader: ink, bands, panels, the void
-│   ├── painting.ts      seed → composition (direction, shear, where the void sits)
+│   ├── painting.ts      seed → character (direction, shear, how much is machine)
 │   ├── field.ts         the live painting behind the home page
+│   ├── scenes.ts        what that painting does at each part of the page
 │   └── covers.ts        the still paintings for notes and series
 ├── lib/markdown/        callouts and code-block titles
 ├── scripts/app.ts       everything that moves

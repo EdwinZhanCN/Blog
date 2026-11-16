@@ -26,15 +26,24 @@ export type Frame = {
 	tear: number;
 	density: number;
 	grain: number;
+	/** How far the hand's plane and the machine's plane have travelled (height = 1). A still painting leaves them out. */
+	hand?: [number, number];
+	machine?: [number, number];
+	/** The machine's plane repeats this often. */
+	period?: number;
 };
 
 const U_INK = [
 	"uRes", "uTime", "uSeed", "uTear", "uDensity", "uShear", "uBands", "uGlitch", "uWash",
 	"uReach", "uEnv", "uGrain", "uPanels", "uTrailOn", "uDir", "uFocus", "uStretch", "uVoid",
-	"uPaper", "uInk", "uMid", "uTrail",
+	"uHand", "uMach", "uPeriod", "uPaper", "uInk", "uMid", "uTrail",
 ] as const;
 
-const U_TRAIL = ["uPrev", "uTexel", "uA", "uB", "uAspect", "uRadius", "uStrength", "uFade"] as const;
+const U_TRAIL = [
+	"uPrev", "uTexel", "uA", "uB", "uAspect", "uRadius", "uStrength", "uFade", "uShift",
+] as const;
+
+const REST: [number, number] = [0, 0];
 
 function compile(gl: WebGL2RenderingContext, type: number, source: string) {
 	const shader = gl.createShader(type)!;
@@ -132,8 +141,18 @@ export class Ink {
 		this.targets = [this.makeTarget(width, height), this.makeTarget(width, height)];
 	}
 
-	/** Lay one segment of ink down and let everything already there dry a little. */
-	stroke(a: [number, number], b: [number, number], radius: number, strength: number, fade: number) {
+	/**
+	 * Lay one segment of ink down and let everything already there dry a little.
+	 * `shift` carries the whole sheet along, in whole texels, when the hand's plane has moved.
+	 */
+	stroke(
+		a: [number, number],
+		b: [number, number],
+		radius: number,
+		strength: number,
+		fade: number,
+		shift: [number, number] = REST,
+	) {
 		if (!this.targets) return;
 		const { gl } = this;
 		const [width, height] = this.trailSize;
@@ -152,6 +171,7 @@ export class Ink {
 		gl.uniform1f(u.uRadius, radius);
 		gl.uniform1f(u.uStrength, strength);
 		gl.uniform1f(u.uFade, fade);
+		gl.uniform2f(u.uShift, shift[0], shift[1]);
 		gl.bindVertexArray(this.vao);
 		gl.drawArrays(gl.TRIANGLES, 0, 3);
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -181,6 +201,11 @@ export class Ink {
 		gl.uniform2f(u.uFocus, painting.focus[0], painting.focus[1]);
 		gl.uniform2f(u.uStretch, painting.stretch[0], painting.stretch[1]);
 		gl.uniform3f(u.uVoid, painting.void[0], painting.void[1], painting.void[2]);
+		const hand = frame.hand ?? REST;
+		const machine = frame.machine ?? REST;
+		gl.uniform2f(u.uHand, hand[0], hand[1]);
+		gl.uniform2f(u.uMach, machine[0], machine[1]);
+		gl.uniform1f(u.uPeriod, frame.period ?? 4);
 		gl.uniform3f(u.uPaper, ...palette.paper);
 		gl.uniform3f(u.uInk, ...palette.ink);
 		gl.uniform3f(u.uMid, ...palette.mid);

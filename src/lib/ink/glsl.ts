@@ -6,6 +6,9 @@
  *    scraped back to paper along ridges, thinned into washes;
  *  - the machine: sheared bands, scanline slips, flat panels, hairlines, blocks.
  *
+ * The two lie on separate planes. As the page scrolls, each plane travels at
+ * its own speed, so the machine slides through the hand.
+ *
  * And one rule: nothing is ever drawn inside the void.
  */
 
@@ -35,6 +38,9 @@ uniform vec2  uDir;       // band direction (unit)
 uniform vec2  uFocus;     // where the mass gathers
 uniform vec2  uStretch;   // envelope ellipse
 uniform vec3  uVoid;      // xy centre, z radius
+uniform vec2  uHand;      // how far the hand's plane has travelled
+uniform vec2  uMach;      // how far the machine's plane has travelled
+uniform float uPeriod;    // the machine's plane repeats this often
 uniform vec3  uPaper;
 uniform vec3  uInk;
 uniform vec3  uMid;
@@ -75,7 +81,8 @@ void main() {
   // ── machine: sheared bands ───────────────────────────────────────────────
   vec2 d = uDir;
   vec2 n = vec2(-d.y, d.x);
-  float bf = dot(p, n) * uBands + so.x;
+  vec2 pm = p + uMach;
+  float bf = dot(pm, n) * uBands + so.x;
   float bid = floor(bf + 0.3 * sin(bf * 2.1 + so.y));
   float br = h11(bid * 1.7 + so.y);
   float moves = step(0.4, br);
@@ -88,7 +95,7 @@ void main() {
   vec2 q = p + d * shift;
 
   // ── machine: scanline slips ──────────────────────────────────────────────
-  float row = floor(q.y * 46.0 + so.y);
+  float row = floor((q.y + uMach.y) * 46.0 + so.y);
   float rr = h21(vec2(row, floor(so.x)));
   q.x += step(0.87, rr) * (h11(row * 0.37) - 0.5) * 0.12 * uGlitch;
 
@@ -102,10 +109,12 @@ void main() {
   q = vc + mat2(ca, -sa, sa, ca) * v * (1.0 + 0.3 * sw);
 
   // ── the hand: mass ───────────────────────────────────────────────────────
+  // The ink lives on its own plane; where it may gather is decided on the page.
+  vec2 qh = q + uHand;
   float t = uTime * 0.014;
-  vec2 w = vec2(fbm(q * 1.25 + so + vec2(0.0, t)),
-                fbm(q * 1.25 + so.yx + vec2(5.2, -t)));
-  vec2 qq = q * 1.55 + so + 2.1 * (w - 0.5);
+  vec2 w = vec2(fbm(qh * 1.25 + so + vec2(0.0, t)),
+                fbm(qh * 1.25 + so.yx + vec2(5.2, -t)));
+  vec2 qq = qh * 1.55 + so + 2.1 * (w - 0.5);
   float f = fbm(qq + vec2(t * 0.6, 0.0));
   float env = 1.0 - smoothstep(0.1, uReach, length((q - uFocus) * uStretch));
   float m = f - 0.5 + (env - 0.5) * uEnv + uDensity;
@@ -114,15 +123,15 @@ void main() {
   m -= 1.25 * smoothstep(leave, leave + 0.45, uTear);
 
   // dry brush: edges fray along the stroke
-  vec2 sq = vec2(dot(q, d), dot(q, n));
+  vec2 sq = vec2(dot(qh, d), dot(qh, n));
   float streak = vn(sq * vec2(5.0, 150.0) + so) * 0.6 + vn(sq * vec2(11.0, 62.0) + so.yx) * 0.4;
   float edge = 1.0 - smoothstep(0.0, 0.12, abs(m));
   m += (streak - 0.5) * 0.2 * edge;
-  m += step(0.86, vn(q * 95.0 + so)) * edge * 0.07;
+  m += step(0.86, vn(qh * 95.0 + so)) * edge * 0.07;
 
   // machine: small blocks flip what they touch
-  float rowB = floor(p.y * 54.0 + so.x);
-  float colB = floor(p.x * mix(7.0, 30.0, h11(rowB * 1.31 + so.y)));
+  float rowB = floor(pm.y * 54.0 + so.x);
+  float colB = floor(pm.x * mix(7.0, 30.0, h11(rowB * 1.31 + so.y)));
   float block = step(0.962, h21(vec2(colB, rowB) + floor(so)))
               * step(abs(m), 0.03 + 0.07 * uGlitch);
 
@@ -146,29 +155,61 @@ void main() {
 
   vec3 col = uPaper;
 
-  // ── machine: flat panels ─────────────────────────────────────────────────
+  // ── machine: flat panels, hairlines, full stops ──────────────────────────
+  // They pass the mass in clusters, two to a period, half a period apart.
+  // The first is the one the painting opens with; each later pass is cut new.
   float invert = 0.0;
   float slab = 0.0;
-  for (int i = 0; i < 6; i++) {
-    float fi = float(i);
-    vec2 r1 = h22(vec2(fi * 7.3 + 1.0, uSeed * 0.37 + fi));
-    vec2 r2 = h22(vec2(fi * 3.1 + 9.0, uSeed * 0.91 + fi * 2.0));
-    vec2 c = uFocus + (r1 - 0.5) * vec2(0.95, 0.62) / uStretch;
-    c += d * uTear * (r2.x - 0.5) * 2.4;
-    vec2 hs = vec2(0.02 + 0.15 * r2.x * r2.x, 0.012 + 0.13 * r2.y * r2.y);
-    if (r2.x > r2.y) hs.y *= 0.34; else hs.x *= 0.34;
-    vec2 pq = p - c;
-    if (i >= 4) pq.x -= pq.y * (d.x / max(abs(d.y), 0.35)) * sign(d.y);
-    vec2 a = abs(pq) - hs;
-    float inside = 1.0 - smoothstep(-px, px, max(a.x, a.y));
-    inside *= (1.0 - smoothstep(0.15 + 0.5 * r1.y, 0.3 + 0.5 * r1.y, uTear)) * uPanels;
-    if (i < 3) {
-      col = mix(col, uMid, inside);
-    } else if (i == 3) {
-      invert = max(invert, inside);
-    } else {
-      float g = clamp(0.5 + pq.y / (2.0 * hs.y), 0.0, 1.0);
-      slab = max(slab, inside * mix(0.84, 1.0, r1.x > 0.5 ? g : 1.0 - g));
+  float lines = 0.0;
+  float stops = 0.0;
+  vec2 spread = vec2(0.95 / uStretch.x, min(0.62 / uStretch.y, 0.84));
+  for (int k = 0; k < 2; k++) {
+    float phase = float(k) * 0.5;
+    float turn = floor(uMach.y / uPeriod - phase + 0.5);
+    float salt = turn * 17.31 + phase * 91.7;
+    vec2 local = vec2(uMach.x, uMach.y - (turn + phase) * uPeriod);
+    vec2 pl = p + local - uFocus;
+    // a cluster changes hands only while it is well off the page
+    float here = (1.0 - smoothstep(0.5 * uPeriod - 0.35, 0.5 * uPeriod - 0.05, abs(local.y))) * uPanels;
+
+    for (int i = 0; i < 6; i++) {
+      float fi = float(i);
+      vec2 r1 = h22(vec2(fi * 7.3 + 1.0, uSeed * 0.37 + fi + salt));
+      vec2 r2 = h22(vec2(fi * 3.1 + 9.0, uSeed * 0.91 + fi * 2.0 + salt));
+      vec2 c = (r1 - 0.5) * spread;
+      c += d * uTear * (r2.x - 0.5) * 2.4;
+      vec2 hs = vec2(0.02 + 0.15 * r2.x * r2.x, 0.012 + 0.13 * r2.y * r2.y);
+      if (r2.x > r2.y) hs.y *= 0.34; else hs.x *= 0.34;
+      vec2 pq = pl - c;
+      if (i >= 4) pq.x -= pq.y * (d.x / max(abs(d.y), 0.35)) * sign(d.y);
+      vec2 a = abs(pq) - hs;
+      float inside = 1.0 - smoothstep(-px, px, max(a.x, a.y));
+      inside *= (1.0 - smoothstep(0.15 + 0.5 * r1.y, 0.3 + 0.5 * r1.y, uTear)) * here;
+      if (i < 3) {
+        col = mix(col, uMid, inside);
+      } else if (i == 3) {
+        invert = max(invert, inside);
+      } else {
+        float g = clamp(0.5 + pq.y / (2.0 * hs.y), 0.0, 1.0);
+        slab = max(slab, inside * mix(0.84, 1.0, r1.x > 0.5 ? g : 1.0 - g));
+      }
+    }
+
+    for (int i = 0; i < 3; i++) {
+      float fi = float(i);
+      float lc = (h11(uSeed * 0.53 + fi * 11.0 + salt) - 0.5) * 0.9;
+      float ld = abs(dot(pl, n) - lc);
+      float along = dot(pl, d) - (h11(uSeed + fi * 5.0 + salt) - 0.5) * 0.6;
+      float seg = step(abs(along), 0.12 + 0.45 * h11(uSeed * 1.9 + fi + salt));
+      lines = max(lines, (1.0 - smoothstep(px * 0.5, px * 1.5, ld)) * seg * here);
+    }
+
+    for (int i = 0; i < 2; i++) {
+      float fi = float(i);
+      vec2 r = h22(vec2(uSeed * 0.77 + fi * 13.0 + salt, fi + 4.0));
+      vec2 c = (r - 0.5) * vec2(spread.x, spread.y * 1.06);
+      float rad = 0.006 + 0.01 * h11(uSeed + fi * 3.0 + salt);
+      stops = max(stops, (1.0 - smoothstep(rad - px, rad + px, length(pl - c))) * here);
     }
   }
 
@@ -176,29 +217,8 @@ void main() {
   col = mix(col, uInk, tone);
   col = mix(col, uPaper + uInk - col, invert);
   col = mix(col, uInk, slab);
-
-  // ── machine: hairlines and full stops ────────────────────────────────────
-  float lines = 0.0;
-  for (int i = 0; i < 3; i++) {
-    float fi = float(i);
-    float lc = (h11(uSeed * 0.53 + fi * 11.0) - 0.5) * 0.9;
-    vec2 lp = p - uFocus;
-    float ld = abs(dot(lp, n) - lc);
-    float along = dot(lp, d) - (h11(uSeed + fi * 5.0) - 0.5) * 0.6;
-    float seg = step(abs(along), 0.12 + 0.45 * h11(uSeed * 1.9 + fi));
-    lines = max(lines, (1.0 - smoothstep(px * 0.5, px * 1.5, ld)) * seg);
-  }
-  lines *= (1.0 - smoothstep(0.05, 0.5, uTear)) * uPanels;
-  col = mix(col, uInk, lines * 0.85);
-
-  for (int i = 0; i < 2; i++) {
-    float fi = float(i);
-    vec2 r = h22(vec2(uSeed * 0.77 + fi * 13.0, fi + 4.0));
-    vec2 c = uFocus + (r - 0.5) * vec2(0.95, 0.66) / uStretch;
-    float rad = 0.006 + 0.01 * h11(uSeed + fi * 3.0);
-    float dot_ = 1.0 - smoothstep(rad - px, rad + px, length(p - c));
-    col = mix(col, uInk, dot_ * (1.0 - smoothstep(0.1, 0.4, uTear)) * uPanels);
-  }
+  col = mix(col, uInk, lines * 0.85 * (1.0 - smoothstep(0.05, 0.5, uTear)));
+  col = mix(col, uInk, stops * (1.0 - smoothstep(0.1, 0.4, uTear)));
 
   // ── your hand ────────────────────────────────────────────────────────────
   if (uTrailOn > 0.5) {
@@ -232,18 +252,21 @@ uniform float uAspect;
 uniform float uRadius;
 uniform float uStrength;
 uniform float uFade;
+uniform vec2  uShift;     // whole texels: the strokes travel with the hand's plane
 
 out vec4 outColor;
 
 void main() {
   vec2 uv = gl_FragCoord.xy * uTexel;
-  float c = texture(uPrev, uv).r;
-  float s = texture(uPrev, uv + vec2(uTexel.x, 0.0)).r
-          + texture(uPrev, uv - vec2(uTexel.x, 0.0)).r
-          + texture(uPrev, uv + vec2(0.0, uTexel.y)).r
-          + texture(uPrev, uv - vec2(0.0, uTexel.y)).r;
-  // ink bleeds a little, then dries
-  float v = mix(c, s * 0.25, 0.16) - uFade;
+  vec2 src = uv + uShift * uTexel;
+  float c = texture(uPrev, src).r;
+  float s = texture(uPrev, src + vec2(uTexel.x, 0.0)).r
+          + texture(uPrev, src - vec2(uTexel.x, 0.0)).r
+          + texture(uPrev, src + vec2(0.0, uTexel.y)).r
+          + texture(uPrev, src - vec2(0.0, uTexel.y)).r;
+  // ink bleeds a little, then dries; what arrives from off the sheet is paper
+  float onSheet = step(0.0, src.x) * step(src.x, 1.0) * step(0.0, src.y) * step(src.y, 1.0);
+  float v = (mix(c, s * 0.25, 0.16) - uFade) * onSheet;
 
   vec2 pa = (uv - uA) * vec2(uAspect, 1.0);
   vec2 ba = (uB - uA) * vec2(uAspect, 1.0);

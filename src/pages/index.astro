@@ -1,7 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import PostRow from "../components/PostRow.astro";
-import { PLAYLISTS, QUESTION, SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 import Base from "../layouts/Base.astro";
 import {
 	getGroupHref,
@@ -20,146 +20,106 @@ const groups = groupPosts(posts);
 const leads = groups.map((group) => posts.find((post) => getPostGroupName(post) === group.name)!);
 const latest = [...leads, ...posts.filter((post) => !leads.includes(post))].slice(0, 6);
 const newest = latest[0];
-const first = PLAYLISTS[0];
+// The series hang in two columns, one nearer than the other.
+const columns = [0, 1].map((side) => groups.filter((_, index) => index % 2 === side));
+const DEPTHS = ["0.93", "1.09"];
 ---
 
 <Base title={SITE_TITLE} description={SITE_DESCRIPTION} field>
-	<section class="hero" data-hero>
-		<div class="hero-top wrap blend">
+	<section class="hero" data-hero data-scene="hero">
+		<div class="hero-top wrap blend" data-depth="0.86">
 			<p class="label" data-reveal data-delay="0.9">Notebook of Edwin Zhan</p>
 			<p class="label" data-reveal data-delay="0.9">N° <span data-seed>00000</span></p>
 		</div>
 
-		<p class="void-note label blend" data-reveal data-delay="2.4" aria-hidden="true">
-			<span></span>Nothing is drawn here.
-		</p>
-
 		<div class="hero-main wrap blend">
 			<h1 class="hero-title" data-reveal="words" data-delay="0.25">
-				Where are the<br />
-				crossroads of<br />
-				<em class="serif">humanity</em> and <span class="hero-tech">tech</span>?
+				At the <br class="br-narrow" />crossroads <br class="br-wide" />of <br class="br-narrow" /><em
+					class="serif">humanity</em
+				> and<br />
+				<span class="hero-tech">technology.</span>
 			</h1>
-			<div class="hero-foot">
-				<p class="hero-answer" data-reveal data-delay="1.5">
-					<span class="label">Answer</span>
-					{QUESTION.answer}
-				</p>
-				<div class="hero-meta label" data-reveal data-delay="1.8">
-					<button type="button" data-repaint aria-label="Paint this page again from a new seed">
-						Repaint <kbd>R</kbd>
-					</button>
-					<span class="hero-scroll">Scroll</span>
-				</div>
+			<div class="hero-meta label" data-reveal data-delay="1.6">
+				<button type="button" data-repaint aria-label="Paint this page again from a new seed">
+					Repaint <kbd>R</kbd>
+				</button>
+				<span class="hero-scroll">Scroll</span>
 			</div>
 		</div>
 	</section>
 
-	<section class="section wrap" aria-labelledby="now">
-		<div class="split">
-			<h2 class="label split-label" id="now">01 — Now <span class="now-dot" aria-hidden="true"></span></h2>
-			<div class="split-body">
-				<p class="statement" data-scrub>
-					I’m Edwin. I study computer science at RPI, and I build software for machines that live at
-					home: inference that runs locally, photo libraries that stay yours, agents that remember.
-					<span class="statement-quiet">Before any of that, I drew.</span>
-				</p>
-				<dl class="facts">
-					<div data-reveal>
-						<dt class="label">Building</dt>
+	<section class="section wrap lane" aria-labelledby="now" data-scene="lane">
+		<span class="lane-void" data-void aria-hidden="true"></span>
+		<h2 class="now-label" id="now">
+			<span class="label blend">01 — Now</span><span class="now-dot" aria-hidden="true"></span>
+		</h2>
+		<p class="statement blend" data-scrub>
+			Software for machines that live at home: inference that runs locally, photo libraries that stay
+			yours, agents that remember.
+		</p>
+		<dl class="facts blend">
+			<div data-reveal>
+				<dt class="label">Building</dt>
+				<dd>
+					{
+						groups
+							.filter((group) => ["lumen", "lumilio-photos"].includes(group.slug))
+							.map((group) => <a href={getGroupHref(group.name)}>{group.label}</a>)
+					}
+				</dd>
+			</div>
+			<div data-reveal data-delay="0.08">
+				<dt class="label">Thinking about</dt>
+				<dd>Fast software, distributed systems, memory for agents</dd>
+			</div>
+			{
+				newest && (
+					<div data-reveal data-delay="0.16">
+						<dt class="label">Latest note</dt>
 						<dd>
-							{
-								groups
-									.filter((group) => ["lumen", "lumilio-photos"].includes(group.slug))
-									.map((group) => <a href={getGroupHref(group.name)}>{group.label}</a>)
-							}
+							<a href={getPostHref(newest)}>{splitTitle(newest.data.title).main}</a>
 						</dd>
 					</div>
-					<div data-reveal data-delay="0.08">
-						<dt class="label">Thinking about</dt>
-						<dd>Fast software, distributed systems, memory for agents</dd>
-					</div>
-					{
-						newest && (
-							<div data-reveal data-delay="0.16">
-								<dt class="label">Latest note</dt>
-								<dd>
-									<a href={getPostHref(newest)}>{splitTitle(newest.data.title).main}</a>
-								</dd>
-							</div>
-						)
-					}
-				</dl>
-			</div>
-		</div>
+				)
+			}
+		</dl>
 	</section>
 
-	<section class="section wrap" aria-labelledby="writing">
-		<div class="section-head">
+	<section class="section wrap lane" aria-labelledby="writing" data-scene="lane">
+		<div class="section-head blend">
 			<h2 class="label" id="writing">02 — Writing</h2>
 			<a class="label arrow-link" href="/blog/">All {posts.length} notes <span aria-hidden="true">→</span></a>
 		</div>
-		<div class="rows">
+		<div class="rows blend">
 			{latest.map((post, index) => <PostRow post={post} index={index + 1} />)}
 		</div>
 	</section>
 
-	<section class="section wrap" aria-labelledby="series">
-		<div class="section-head">
+	<section class="section wrap" aria-labelledby="series" data-scene="series">
+		<div class="section-head blend">
 			<h2 class="label" id="series">03 — Series</h2>
-			<p class="label">Every painting is grown from its name</p>
+			<p class="label">{String(groups.length).padStart(2, "0")}</p>
 		</div>
-		<div class="tiles">
+		<div class="hang">
 			{
-				groups.map((group) => (
-					<a class="tile" href={getGroupHref(group.name)} data-reveal>
-						<div class="sheet">
-							<canvas data-cover={seedFor(group.slug)} aria-hidden="true" />
-						</div>
-						<div class="tile-text blend">
-							<h3 class="tile-name">{group.label}</h3>
-							<p class="tile-count">
-								{String(group.posts.length).padStart(2, "0")} {group.posts.length === 1 ? "note" : "notes"}
-							</p>
-						</div>
-					</a>
+				columns.map((column, side) => (
+					<div class="hang-col" data-depth={DEPTHS[side]}>
+						{column.map((group) => (
+							<a class="tile" href={getGroupHref(group.name)} data-reveal>
+								<div class="sheet">
+									<canvas data-cover={seedFor(group.slug)} data-window aria-hidden="true" />
+								</div>
+								<div class="tile-text blend">
+									<h3 class="tile-name">{group.label}</h3>
+									<p class="tile-count">
+										{String(group.posts.length).padStart(2, "0")} {group.posts.length === 1 ? "note" : "notes"}
+									</p>
+								</div>
+							</a>
+						))}
+					</div>
 				))
 			}
-		</div>
-	</section>
-
-	<section class="section wrap" aria-labelledby="listening">
-		<div class="section-head">
-			<h2 class="label" id="listening">04 — Listening</h2>
-			<p class="label">Side <span data-record-side>{first.side}</span> · <span data-record-title>{first.title}</span></p>
-		</div>
-		<div class="listening">
-			<div class="listening-copy">
-				<p class="headline" data-reveal="words">Flip the <em class="serif">record.</em></p>
-				<button
-					class="record"
-					type="button"
-					data-record={JSON.stringify(PLAYLISTS)}
-					aria-label={`Flip to side ${PLAYLISTS[1].side}: ${PLAYLISTS[1].title}`}
-				>
-					<span class="record-disc" aria-hidden="true">
-						<span class="record-label">
-							<span class="label">Side <span data-record-side>{first.side}</span></span>
-							<strong data-record-year>{first.year}</strong>
-						</span>
-					</span>
-				</button>
-			</div>
-			<div class="listening-player" data-reveal>
-				<iframe
-					title={`Apple Music playlist: ${first.title}`}
-					allow="autoplay *; encrypted-media *;"
-					height="450"
-					loading="lazy"
-					sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
-					src={first.src}
-					data-record-frame></iframe>
-			</div>
 		</div>
 	</section>
 </Base>
@@ -184,13 +144,8 @@ const first = PLAYLISTS[0];
 	}
 
 	.hero-top .label,
-	.hero-meta,
-	.hero-answer .label {
+	.hero-meta {
 		color: inherit;
-	}
-
-	.void-note {
-		color: #fff;
 	}
 
 	.hero-title {
@@ -206,7 +161,7 @@ const first = PLAYLISTS[0];
 		padding-right: 0.04em;
 	}
 
-	/* "humanity" is set by hand, "tech" by machine. */
+	/* "humanity" is set by hand, "technology" by machine. */
 	.hero-tech {
 		font-family: var(--font-mono);
 		font-weight: 420;
@@ -214,26 +169,26 @@ const first = PLAYLISTS[0];
 		letter-spacing: -0.085em;
 	}
 
-	.hero-foot {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 24px;
-		margin-top: clamp(24px, 3.4vw, 48px);
+	.br-narrow {
+		display: none;
 	}
 
-	.hero-answer {
-		display: flex;
-		align-items: baseline;
-		gap: 14px;
-		font-size: clamp(1.25rem, 2.2vw, 1.75rem);
-		letter-spacing: -0.025em;
+	@media (max-width: 640px) {
+		.br-narrow {
+			display: inline;
+		}
+
+		.br-wide {
+			display: none;
+		}
 	}
 
 	.hero-meta {
 		display: flex;
 		align-items: center;
+		justify-content: flex-end;
 		gap: 22px;
+		margin-top: clamp(24px, 3.4vw, 48px);
 	}
 
 	.hero-meta button {
@@ -286,60 +241,55 @@ const first = PLAYLISTS[0];
 		}
 	}
 
-	/* A museum label for the one place the ink never goes. */
-	.void-note {
-		position: absolute;
-		left: calc(var(--void-x, 70vw) + var(--void-r, 12vw) * 0.7071);
-		top: calc(var(--void-y, 42vh) + var(--void-r, 12vw) * 0.7071);
-		display: flex;
-		align-items: flex-end;
-		white-space: nowrap;
-	}
-
-	.void-note span {
-		width: 44px;
-		height: 44px;
-		margin-right: 10px;
-		margin-bottom: 0.55em;
-		background: linear-gradient(
-			to top right,
-			transparent calc(50% - 0.5px),
-			currentColor calc(50% - 0.5px),
-			currentColor calc(50% + 0.5px),
-			transparent calc(50% + 0.5px)
-		);
-		transform: scaleY(-1);
-	}
-
-	:global(.no-field) .void-note {
-		display: none;
-	}
-
 	@media (max-width: 860px) {
 		.hero-meta button {
 			display: none;
 		}
+	}
 
-		/* No room for a leader line on a phone: the label sits under the circle instead. */
-		.void-note {
-			left: var(--void-x, 60vw);
-			top: calc(var(--void-y, 30vh) + var(--void-r, 20vw) + 12px);
-			translate: -50% 0;
+	/* ── The lane: text keeps to nine columns, the painting to the other three ── */
+
+	.lane {
+		display: grid;
+		grid-template-columns: repeat(12, minmax(0, 1fr));
+		column-gap: clamp(16px, 2vw, 28px);
+	}
+
+	.lane > * {
+		grid-column: 1 / span 9;
+	}
+
+	/* Marks the middle of the margin, so the painting knows where it is. */
+	.lane > .lane-void {
+		grid-column: 10 / -1;
+		grid-row: 1;
+		height: 0;
+	}
+
+	@media (max-width: 860px) {
+		.lane > * {
+			grid-column: 1 / -1;
 		}
 
-		.void-note span {
+		.lane > .lane-void {
 			display: none;
 		}
 	}
 
 	/* ── Now ────────────────────────────────────────────────────────────── */
 
+	.now-label {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding-bottom: 28px;
+		line-height: 1;
+	}
+
 	/* The page's one vermilion mark: this part is current. */
 	.now-dot {
-		display: inline-block;
 		width: 7px;
 		height: 7px;
-		margin-left: 8px;
 		border-radius: 50%;
 		background: var(--seal);
 		animation: breathe 3.2s ease-in-out infinite;
@@ -357,13 +307,6 @@ const first = PLAYLISTS[0];
 		font-weight: 600;
 		line-height: 1.06;
 		letter-spacing: -0.042em;
-	}
-
-	.statement-quiet {
-		font-family: var(--font-serif);
-		font-style: italic;
-		font-weight: 400;
-		letter-spacing: -0.03em;
 	}
 
 	.facts {
@@ -401,111 +344,6 @@ const first = PLAYLISTS[0];
 	@media (max-width: 700px) {
 		.facts {
 			grid-template-columns: 1fr;
-		}
-	}
-
-	/* ── Listening ──────────────────────────────────────────────────────── */
-
-	.listening {
-		display: grid;
-		grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-		align-items: center;
-		gap: clamp(32px, 5vw, 80px);
-		padding-top: clamp(40px, 6vw, 80px);
-	}
-
-	.listening-copy {
-		display: grid;
-		gap: clamp(28px, 4vw, 56px);
-	}
-
-	/* A record is a disc of ink with a perfect hole in it. */
-	.record {
-		--flip: 0deg;
-		width: min(100%, 420px);
-		aspect-ratio: 1;
-		perspective: 1400px;
-		border-radius: 50%;
-	}
-
-	.record-disc {
-		position: relative;
-		display: grid;
-		place-items: center;
-		width: 100%;
-		height: 100%;
-		border-radius: 50%;
-		background:
-			repeating-radial-gradient(
-				circle,
-				transparent 0 2px,
-				color-mix(in srgb, var(--paper) 9%, transparent) 2px 3px
-			),
-			conic-gradient(
-				from 40deg,
-				var(--ink),
-				color-mix(in oklab, var(--ink) 78%, var(--paper)) 12%,
-				var(--ink) 26%,
-				var(--ink) 50%,
-				color-mix(in oklab, var(--ink) 78%, var(--paper)) 62%,
-				var(--ink) 76%
-			);
-		transform: rotateY(var(--flip));
-		transition: transform 1.1s var(--ease-in-out);
-		animation: spin 14s linear infinite;
-		animation-composition: add;
-	}
-
-	.record:hover .record-disc {
-		animation-duration: 5s;
-	}
-
-	.record-label {
-		display: grid;
-		place-items: center;
-		align-content: center;
-		gap: 2px;
-		width: 38%;
-		aspect-ratio: 1;
-		border-radius: 50%;
-		background: var(--paper);
-		color: var(--fg);
-	}
-
-	.record-label strong {
-		font-size: clamp(1.25rem, 2.4vw, 2rem);
-		font-weight: 600;
-		letter-spacing: -0.04em;
-		line-height: 1;
-	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
-	.listening-player {
-		overflow: hidden;
-		border-radius: 20px;
-		box-shadow: inset 0 0 0 1px var(--line);
-		background: var(--tint);
-	}
-
-	.listening-player iframe {
-		display: block;
-		width: 100%;
-		border: 0;
-		background: transparent;
-	}
-
-	@media (max-width: 860px) {
-		.listening {
-			grid-template-columns: 1fr;
-		}
-
-		.record {
-			width: min(72%, 320px);
 		}
 	}
 </style>

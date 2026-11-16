@@ -1,9 +1,6 @@
 ---
 import { AUTHOR } from "../consts";
 import Base from "../layouts/Base.astro";
-import { seedFor } from "../utils/blog";
-
-const portraitSeed = seedFor(AUTHOR.fullName);
 
 const bio = [
 	{ term: "Name", detail: AUTHOR.fullName },
@@ -18,23 +15,21 @@ const interests = [
 	"ReAct agents with memory systems.",
 ];
 
+const colophon = [
+	{ term: "Type", detail: "Inter · Newsreader · JetBrains Mono" },
+	{ term: "Built with", detail: "Astro · Motion · one WebGL fragment shader" },
+	{ term: "Paintings", detail: "A new seed on every visit to the home page. One for each note and series, from its name." },
+];
+
 const stack = ["Go", "Python", "TypeScript", "Swift", "Rust", "React", "PyTorch", "FastAPI", "Docker", "Node.js", "WebAssembly"];
 ---
 
 <Base title="About" description={`About ${AUTHOR.name} and the notes collected on this site.`}>
 	<div class="page wrap">
-		<header class="page-head about-head">
-			<div class="about-intro">
-				<p class="label" data-reveal>About</p>
-				<h1 class="page-title" data-reveal="words">Hi.</h1>
-				<p class="page-lede" data-reveal data-delay="0.3">
-					I’m Zihao. Edwin, in English. I write software, and before that, I drew.
-				</p>
-			</div>
-			<figure class="portrait" data-reveal data-delay="0.15">
-				<div class="sheet"><canvas data-cover={portraitSeed} aria-hidden="true"></canvas></div>
-				<figcaption class="label">Self-portrait · grown from my name · seed {String(portraitSeed).padStart(5, "0")}</figcaption>
-			</figure>
+		<header class="page-head">
+			<p class="label" data-reveal>About</p>
+			<h1 class="page-title" data-reveal="words">Hi.</h1>
+			<p class="page-lede" data-reveal data-delay="0.3">I’m Zihao. Edwin, in English.</p>
 		</header>
 
 		<section class="split block" aria-labelledby="bio">
@@ -97,69 +92,21 @@ const stack = ["Go", "Python", "TypeScript", "Swift", "Rust", "React", "PyTorch"
 	<div class="wrap">
 		<section class="split block" aria-labelledby="site">
 			<h2 class="label split-label" id="site">This site</h2>
-			<div class="split-body colophon">
-				<div class="colophon-text">
-					<p data-reveal>
-						<strong>The ink is me.</strong> It moves, it makes a mess, and it’s the part you actually see.
-					</p>
-					<p data-reveal>
-						<strong>The circle is what I leave untouched.</strong> An ideal I hold, not one I’m in a hurry to
-						become. It’s only visible because of what moves around it.
-					</p>
-					<p data-reveal>
-						<strong>The layout is strict; the painting isn’t.</strong> Each visit grows a new one from a random
-						seed, and every note and series grows its own from its name. I like control. This is where I let
-						accident in.
-					</p>
-					<p class="label colophon-credits" data-reveal>
-						Inter · Newsreader · JetBrains Mono<br />
-						Astro · Motion · one WebGL fragment shader
-					</p>
-				</div>
-				<figure class="reserved" data-reveal>
-					<div class="reserved-frame"></div>
-					<figcaption class="label">
-						<span class="seal" aria-hidden="true"></span>
-						Reserved. For a drawing of my own, when one says it right.
-					</figcaption>
-				</figure>
-			</div>
+			<dl class="split-body ledger is-quiet">
+				{
+					colophon.map((row) => (
+						<div data-reveal>
+							<dt class="label">{row.term}</dt>
+							<dd>{row.detail}</dd>
+						</div>
+					))
+				}
+			</dl>
 		</section>
 	</div>
 </Base>
 
 <style>
-	.about-head {
-		grid-template-columns: minmax(0, 1fr) clamp(220px, 30vw, 440px);
-		align-items: end;
-		gap: clamp(28px, 5vw, 80px);
-	}
-
-	.about-intro {
-		display: grid;
-		gap: 28px;
-	}
-
-	.portrait .sheet {
-		aspect-ratio: 1;
-	}
-
-	.portrait figcaption {
-		margin-top: 10px;
-		color: var(--fg-3);
-	}
-
-	@media (max-width: 760px) {
-		.about-head {
-			grid-template-columns: 1fr;
-		}
-
-		.portrait {
-			order: -1;
-			width: min(62%, 280px);
-		}
-	}
-
 	.block {
 		padding-block: clamp(40px, 6vw, 88px);
 		border-top: 1px solid var(--line-strong);
@@ -183,6 +130,15 @@ const stack = ["Go", "Python", "TypeScript", "Swift", "Rust", "React", "PyTorch"
 		font-weight: 600;
 		line-height: 1.15;
 		letter-spacing: -0.03em;
+	}
+
+	.ledger.is-quiet dd {
+		font-size: 1.0625rem;
+		font-weight: 400;
+		line-height: 1.4;
+		letter-spacing: -0.015em;
+		color: var(--fg-2);
+		text-wrap: balance;
 	}
 
 	.interests li {
@@ -262,68 +218,6 @@ const stack = ["Go", "Python", "TypeScript", "Swift", "Rust", "React", "PyTorch"
 	@media (prefers-reduced-motion: reduce) {
 		.marquee-track {
 			animation: none;
-		}
-	}
-
-	/* ── Colophon ───────────────────────────────────────────────────────── */
-
-	.colophon {
-		display: grid;
-		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-		align-items: start;
-		gap: clamp(32px, 5vw, 80px);
-	}
-
-	.colophon-text p {
-		max-width: 30em;
-		font-size: clamp(1.125rem, 1.7vw, 1.375rem);
-		line-height: 1.4;
-		letter-spacing: -0.02em;
-		color: var(--fg-2);
-	}
-
-	.colophon-text p + p {
-		margin-top: 1.3em;
-	}
-
-	.colophon-text strong {
-		color: var(--fg);
-		font-weight: 600;
-	}
-
-	.colophon-text .colophon-credits {
-		margin-top: 3em;
-		font-size: 0.6875rem;
-		line-height: 1.9;
-		letter-spacing: 0.08em;
-	}
-
-	.reserved-frame {
-		aspect-ratio: 4 / 5;
-		box-shadow: inset 0 0 0 1px var(--line-strong);
-	}
-
-	.reserved figcaption {
-		display: flex;
-		align-items: baseline;
-		gap: 10px;
-		margin-top: 12px;
-		line-height: 1.6;
-	}
-
-	.reserved .seal {
-		flex: none;
-		width: 9px;
-		height: 9px;
-	}
-
-	@media (max-width: 860px) {
-		.colophon {
-			grid-template-columns: 1fr;
-		}
-
-		.reserved {
-			max-width: 320px;
 		}
 	}
 </style>

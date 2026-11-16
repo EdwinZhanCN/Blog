@@ -182,8 +182,14 @@ svg {
 	letter-spacing: -0.02em;
 }
 
-/* Type that sits on the painting: always legible, whatever is under it. */
+/* Type that sits on the painting: always legible, whatever is under it.
+   Difference only shows against white, so the greys and rules turn to shares of white. */
 .blend {
+	--fg: #fff;
+	--fg-2: rgb(255 255 255 / 0.62);
+	--fg-3: rgb(255 255 255 / 0.4);
+	--line: rgb(255 255 255 / 0.13);
+	--line-strong: rgb(255 255 255 / 0.28);
 	color: #fff;
 	mix-blend-mode: difference;
 }
@@ -195,13 +201,6 @@ svg {
 	background: var(--seal);
 	-webkit-mask: radial-gradient(circle at 60% 40%, transparent 0 26%, #000 29%);
 	mask: radial-gradient(circle at 60% 40%, transparent 0 26%, #000 29%);
-}
-
-.headline {
-	font-size: clamp(2.5rem, 5.6vw, 5rem);
-	font-weight: 600;
-	line-height: 1.02;
-	letter-spacing: -0.04em;
 }
 
 .pill {
@@ -610,32 +609,54 @@ main {
 	transition: transform 1.6s var(--ease-out);
 }
 
-.tiles {
+/* The series hang in two columns with the painting's ribbon between them.
+   The second column starts lower and sits nearer, so it passes faster. */
+.hang {
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));
-	gap: clamp(10px, 1vw, 14px);
+	column-gap: clamp(16px, 2vw, 28px);
+	padding-top: clamp(40px, 6vw, 88px);
+}
+
+.hang-col {
+	display: grid;
+	align-content: start;
+	gap: clamp(28px, 8vw, 128px);
+	grid-column: 1 / span 5;
+}
+
+.hang-col + .hang-col {
+	grid-column: 8 / span 5;
+	padding-top: clamp(72px, 21vw, 320px);
 }
 
 .tile {
 	position: relative;
 	display: block;
-	grid-column: span 4;
-	aspect-ratio: 4 / 5;
+	aspect-ratio: 1;
 	isolation: isolate;
-}
-
-.tile:nth-child(1) {
-	grid-column: span 7;
-	aspect-ratio: auto;
-}
-
-.tile:nth-child(2) {
-	grid-column: span 5;
 }
 
 .tile .sheet {
 	position: absolute;
 	inset: 0;
+}
+
+/* A hairline frame: these are sheets hung in front of the painting, not part of it. */
+.tile .sheet::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	box-shadow: inset 0 0 0 1px var(--line-strong);
+	pointer-events: none;
+}
+
+/* Taller than its frame: the painting drifts inside it as the frame passes. */
+.tile canvas {
+	position: absolute;
+	top: -8%;
+	left: 0;
+	height: 116%;
 }
 
 .tile:hover canvas {
@@ -668,16 +689,46 @@ main {
 }
 
 @media (max-width: 860px) {
-	.tile,
-	.tile:nth-child(1),
-	.tile:nth-child(2) {
-		grid-column: span 6;
-		aspect-ratio: 4 / 5;
+	.hang-col {
+		grid-column: 1 / span 6;
+		gap: clamp(16px, 5vw, 40px);
 	}
 
-	.tile:nth-child(1) {
-		grid-column: 1 / -1;
-		aspect-ratio: 5 / 4;
+	.hang-col + .hang-col {
+		grid-column: 7 / span 6;
+		padding-top: 24vw;
+	}
+
+	/* Too small to carry type: the name moves under the painting, onto paper of its own.
+	   (It can't take its colour from what is behind it here: the column it rides in is moving.) */
+	.tile {
+		aspect-ratio: auto;
+	}
+
+	.tile .sheet {
+		position: relative;
+		inset: auto;
+		aspect-ratio: 1;
+	}
+
+	.tile-text.blend {
+		position: static;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+		padding: 10px 0 12px;
+		background: var(--paper);
+		color: var(--ink);
+		mix-blend-mode: normal;
+	}
+
+	.tile-text.blend .tile-count {
+		color: color-mix(in oklab, var(--ink) 62%, var(--paper));
+	}
+
+	.tile-name {
+		font-size: 1.125rem;
+		letter-spacing: -0.03em;
 	}
 }
 
@@ -697,31 +748,19 @@ main {
 	min-height: 100svh;
 }
 
-.footer-hello {
-	font-size: clamp(2.25rem, 6.4vw, 6.5rem);
-	font-weight: 600;
-	line-height: 0.98;
-	letter-spacing: -0.045em;
-	text-wrap: balance;
-}
-
-.footer-hello em {
-	font-family: var(--font-serif);
-	font-weight: 400;
-	letter-spacing: -0.03em;
-}
-
 .footer-mail {
-	display: inline-block;
-	margin-top: clamp(20px, 3vw, 36px);
-	font-size: clamp(1.125rem, 2vw, 1.5rem);
-	letter-spacing: -0.02em;
-	background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat;
+	align-self: flex-start;
+	padding-bottom: 0.06em;
+	font-size: clamp(1.5rem, 5vw, 5rem);
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: -0.045em;
+	background: linear-gradient(currentColor, currentColor) 0 100% / 100% max(1px, 0.03em) no-repeat;
 	transition: background-size 0.6s var(--ease-out);
 }
 
 .footer-mail:hover {
-	background-size: 0 1px;
+	background-size: 0 max(1px, 0.03em);
 	background-position: 100% 100%;
 }
 
@@ -764,12 +803,14 @@ html.js [data-reveal="words"] {
 	opacity: 1;
 }
 
+/* The mask is wider than the word: negative tracking pulls the last glyph past the
+   advance box, and italics lean out of it on both sides. Margins give the room back. */
 .word {
 	display: inline-block;
 	overflow: hidden;
 	vertical-align: top;
-	padding-bottom: 0.14em;
-	margin-bottom: -0.14em;
+	padding: 0.06em 0.2em 0.14em;
+	margin: -0.06em -0.2em -0.14em;
 }
 
 .word > span {

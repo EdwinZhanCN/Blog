@@ -21,27 +21,6 @@ export const SOCIALS = [
 	{ href: "/rss.xml", label: "RSS" },
 ] as const;
 
-/** The question the site opens with, and the honest state of the answer. */
-export const QUESTION = {
-	answer: "Not yet.",
-};
-
-/** Two sides of one record. Add a year, flip the disc. */
-export const PLAYLISTS = [
-	{
-		side: "A",
-		title: "2026's",
-		year: "2026",
-		src: "https://embed.music.apple.com/us/playlist/2026-s/pl.u-pMyllEmcWBV25My",
-	},
-	{
-		side: "B",
-		title: "2025's",
-		year: "2025",
-		src: "https://embed.music.apple.com/cn/playlist/2025-s/pl.u-qxylKqDI3jagdpJ?l=en",
-	},
-] as const;
-
 /** What a post's `status` means to a reader. Unfinished is a state, not a failure. */
 export const STATUS = {
 	sketch: { label: "Sketch", note: "A sketch. Unfinished on purpose, published anyway." },

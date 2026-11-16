@@ -2,6 +2,7 @@ import { animate, inView, scroll, stagger } from "motion";
 import { mountCovers, paintCover } from "../lib/ink/covers";
 import { mountField, type Field } from "../lib/ink/field";
 import { toSeed } from "../lib/ink/painting";
+import { mountScore } from "../lib/ink/scenes";
 
 type Cleanup = () => void;
 
@@ -218,50 +219,33 @@ function mountHome(): Cleanup {
 	const canvas = document.querySelector<HTMLCanvasElement>("[data-field]");
 	if (!canvas) return () => {};
 
-	const footer = document.querySelector<HTMLElement>("[data-footer]");
+	const score = mountScore();
 	let field: Field | undefined;
 
 	const showSeed = (seed: number) => {
 		const text = String(seed).padStart(5, "0");
 		for (const node of document.querySelectorAll("[data-seed]")) node.textContent = text;
-		for (const node of document.querySelectorAll("[data-seed-label]")) {
-			node.textContent = `Painted once · Seed ${text}`;
-		}
 	};
 
 	try {
 		field = mountField(canvas, {
 			seed: toSeed(Math.random() * 99991),
-			place: (width, height) =>
-				width >= 860 && width > height
-					? { x: 0.72, y: 0.42, radius: 0.165 }
-					: { x: 0.6, y: 0.3, radius: 0.2 },
-			tear: () => {
-				const view = window.innerHeight;
-				const leaving = clamp(window.scrollY / (view * 0.9));
-				const returning = footer ? clamp(footer.getBoundingClientRect().top / (view * 0.8)) : 1;
-				return Math.min(leaving, returning);
-			},
+			scene: score.read,
 			onPaint: showSeed,
-			onLayout: (hole) => {
-				root.style.setProperty("--void-x", `${hole.x}px`);
-				root.style.setProperty("--void-y", `${hole.y}px`);
-				root.style.setProperty("--void-r", `${hole.radius}px`);
-			},
 		});
 	} catch (error) {
 		// No WebGL: the page is still a page. Paper, type, nothing else.
 		console.warn(error);
 		canvas.remove();
-		root.classList.add("no-field");
+		score.destroy();
 		return () => {};
 	}
 
 	const repaint = () => field?.repaint();
 	const onKey = (event: KeyboardEvent) => {
 		if (event.key.toLowerCase() !== "r" || event.metaKey || event.ctrlKey || event.altKey) return;
-		const target = event.target as HTMLElement;
-		if (target.closest("input, textarea, [contenteditable]")) return;
+		const target = event.target;
+		if (target instanceof Element && target.closest("input, textarea, [contenteditable]")) return;
 		repaint();
 	};
 	const buttons = [...document.querySelectorAll<HTMLElement>("[data-repaint]")];
@@ -271,7 +255,87 @@ function mountHome(): Cleanup {
 	return () => {
 		for (const button of buttons) button.removeEventListener("click", repaint);
 		window.removeEventListener("keydown", onKey);
+		score.destroy();
 		field?.destroy();
+	};
+}
+
+/* ── Depth ────────────────────────────────────────────────────────────────── */
+
+/**
+ * Things at different distances pass at different speeds.
+ *
+ * `data-depth="0.9"` moves an element at 0.9× the page, as if it were further away;
+ * above 1 it is nearer. It sits exactly where the layout put it when its top edge is
+ * 30% of the way down the viewport. Whatever is on screen when the page opens sits
+ * true at the top of the page instead.
+ *
+ * `data-window` is a picture taller than its frame, drifting inside it as the frame passes.
+ */
+function mountDepth(): Cleanup {
+	const movers = [...document.querySelectorAll<HTMLElement>("[data-depth]")];
+	const pictures = [...document.querySelectorAll<HTMLElement>("[data-window]")];
+	if (reduced || movers.length + pictures.length === 0) return () => {};
+
+	let moving: { node: HTMLElement; rest: number; rate: number }[] = [];
+	let framed: { node: HTMLElement; centre: number; span: number; room: number }[] = [];
+	let raf = 0;
+
+	const apply = () => {
+		raf = 0;
+		const scroll = window.scrollY;
+		const view = window.innerHeight;
+		const limit = view * 0.3;
+		for (const { node, rest, rate } of moving) {
+			node.style.translate = `0 ${clamp((rest - scroll) * rate, -limit, limit).toFixed(1)}px`;
+		}
+		for (const { node, centre, span, room } of framed) {
+			node.style.translate = `0 ${(clamp((scroll + view / 2 - centre) / span, -1, 1) * room).toFixed(1)}px`;
+		}
+	};
+
+	const measure = () => {
+		for (const node of movers) node.style.translate = "";
+		for (const node of pictures) node.style.translate = "";
+		const scroll = window.scrollY;
+		const view = window.innerHeight;
+		moving = movers.map((node) => {
+			const top = node.getBoundingClientRect().top + scroll;
+			return {
+				node,
+				rest: top < view ? 0 : top - view * 0.3,
+				rate: Number(node.dataset.depth) - 1,
+			};
+		});
+		framed = pictures.map((node) => {
+			const frame = (node.parentElement ?? node).getBoundingClientRect();
+			return {
+				node,
+				centre: frame.top + scroll + frame.height / 2,
+				span: (view + frame.height) / 2,
+				room: Math.max(0, (node.offsetHeight - frame.height) / 2),
+			};
+		});
+		apply();
+	};
+
+	const onScroll = () => {
+		if (!raf) raf = requestAnimationFrame(apply);
+	};
+
+	measure();
+	const observer = new ResizeObserver(measure);
+	observer.observe(document.body);
+	window.addEventListener("resize", measure);
+	window.addEventListener("scroll", onScroll, { passive: true });
+
+	return () => {
+		cancelAnimationFrame(raf);
+		observer.disconnect();
+		window.removeEventListener("resize", measure);
+		window.removeEventListener("scroll", onScroll);
+		for (const node of movers) node.style.translate = "";
+		for (const node of pictures) node.style.translate = "";
 	};
 }
 
@@ -340,51 +404,6 @@ function mountPeek(): Cleanup {
 		}
 		window.removeEventListener("pointermove", onMove);
 	};
-}
-
-/* ── The record ───────────────────────────────────────────────────────────── */
-
-function mountRecord(): Cleanup {
-	const record = document.querySelector<HTMLElement>("[data-record]");
-	const frame = document.querySelector<HTMLIFrameElement>("[data-record-frame]");
-	if (!record || !frame) return () => {};
-
-	const sides = JSON.parse(record.dataset.record ?? "[]") as {
-		side: string;
-		title: string;
-		year: string;
-		src: string;
-	}[];
-	let index = 0;
-	let turns = 0;
-
-	const flip = () => {
-		index = (index + 1) % sides.length;
-		turns += 1;
-		const next = sides[index];
-		const upcoming = sides[(index + 1) % sides.length];
-		record.style.setProperty("--flip", `${turns * 180}deg`);
-		record.setAttribute("aria-label", `Flip to side ${upcoming.side}: ${upcoming.title}`);
-		frame.src = next.src;
-		frame.title = `Apple Music playlist: ${next.title}`;
-		window.setTimeout(
-			() => {
-				for (const node of document.querySelectorAll("[data-record-side]")) {
-					node.textContent = next.side;
-				}
-				for (const node of document.querySelectorAll("[data-record-year]")) {
-					node.textContent = next.year;
-				}
-				for (const node of document.querySelectorAll("[data-record-title]")) {
-					node.textContent = next.title;
-				}
-			},
-			reduced ? 0 : 260,
-		);
-	};
-
-	record.addEventListener("click", flip);
-	return () => record.removeEventListener("click", flip);
 }
 
 /* ── Reading ──────────────────────────────────────────────────────────────── */
@@ -535,9 +554,9 @@ function mount() {
 		mountReveals(),
 		mountScrub(),
 		mountHome(),
+		mountDepth(),
 		mountCovers(),
 		mountPeek(),
-		mountRecord(),
 		mountReading(),
 	];
 }

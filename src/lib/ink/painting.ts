@@ -67,33 +67,24 @@ export function coverPainting(seed: number): Painting {
 	};
 }
 
-export type FieldLayout = {
-	width: number;
-	height: number;
-	/** Void centre as a fraction of the viewport, and radius as a fraction of its short side. */
-	voidX: number;
-	voidY: number;
-	voidRadius: number;
+/** What the seed decides about the live painting. The page decides the rest as it scrolls. */
+export type FieldCharacter = Pick<
+	Painting,
+	"seed" | "dir" | "bands" | "shear" | "glitch" | "wash" | "panels"
+> & {
+	/** A little more or less reach, so two visits never gather quite the same mass. */
+	spread: number;
 };
 
-/** The live painting behind a page, composed around a void placed by the layout. */
-export function fieldPainting(seed: number, layout: FieldLayout): Painting {
+/** The live painting behind a page. Both materials are always present: that is its subject. */
+export function fieldCharacter(seed: number, portrait: boolean): FieldCharacter {
 	const { random, ...rest } = temperament(seed);
-	const aspect = layout.width / layout.height;
-	const x = (layout.voidX - 0.5) * aspect;
-	const y = 0.5 - layout.voidY;
-	const radius = (layout.voidRadius * Math.min(layout.width, layout.height)) / layout.height;
-	const portrait = aspect < 0.8;
 	return {
 		seed,
 		...rest,
 		bands: rest.bands * (portrait ? 0.8 : 1),
-		reach: portrait ? 0.7 : 0.62 + random() * 0.07,
-		env: 0.6,
-		// Lean the mass away from the headline, so the type is crossed by ink but never buried.
-		focus: [x + (portrait ? 0 : 0.06), y + (portrait ? 0.02 : -0.02)],
-		stretch: portrait ? [1.2, 1.3] : [0.92, 1.12],
-		void: [x, y, radius],
+		panels: 1,
+		spread: portrait ? 0 : random() * 0.07,
 	};
 }
 

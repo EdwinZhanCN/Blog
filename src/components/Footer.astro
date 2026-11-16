@@ -2,7 +2,7 @@
 import { AUTHOR, SOCIALS } from "../consts";
 
 interface Props {
-	/** On the home page the footer is a full screen and the ink comes back under it. */
+	/** On the home page the footer is a full screen, and the painting comes back whole under it. */
 	tall?: boolean;
 }
 
@@ -10,14 +10,8 @@ const { tall = false } = Astro.props;
 const year = new Date().getFullYear();
 ---
 
-<footer class:list={["footer wrap", { "is-tall blend": tall }]} data-footer>
-	<div>
-		<p class="footer-hello" data-reveal="words">
-			If we’ve met, hello <em class="serif">again.</em><br />
-			If we haven’t yet, hello.
-		</p>
-		<a class="footer-mail" href={`mailto:${AUTHOR.email}`} data-reveal>{AUTHOR.email}</a>
-	</div>
+<footer class:list={["footer wrap", { "is-tall blend": tall }]} data-scene={tall ? "footer" : undefined}>
+	<a class="footer-mail" href={`mailto:${AUTHOR.email}`} data-reveal>{AUTHOR.email}</a>
 	<div class="footer-base label">
 		<span>&copy; {year} {AUTHOR.name}</span>
 		<ul>
@@ -31,6 +25,6 @@ const year = new Date().getFullYear();
 				))
 			}
 		</ul>
-		{tall && <span data-seed-label>Painted once</span>}
+		{tall && <span>N° <span data-seed>00000</span></span>}
 	</div>
 </footer>

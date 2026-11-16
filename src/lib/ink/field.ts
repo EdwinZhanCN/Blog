@@ -1,17 +1,37 @@
 import { Ink, type Painting, type Palette } from "./core";
-import { fieldPainting, readPalette, toSeed } from "./painting";
+import { fieldCharacter, readPalette, toSeed, type FieldCharacter } from "./painting";
 
-export type VoidPlacement = { x: number; y: number; radius: number };
+/** What the page asks of the painting at one moment of the scroll. */
+export type Scene = {
+	/** The void: centre as fractions of the viewport, radius as a fraction of its short side. */
+	x: number;
+	y: number;
+	radius: number;
+	/** Where the mass gathers, measured from the void (viewport height = 1). */
+	lean: [number, number];
+	/** The shape of the mass: the larger a value, the narrower the mass along that axis. */
+	stretch: [number, number];
+	reach: number;
+	env: number;
+	/** Added to the coverage: below zero thins the ink. */
+	density: number;
+	/** 0 = the painting is whole, 1 = it has been torn off the page. */
+	tear: number;
+	/** Above one half, the visitor's pointer is a brush. */
+	brush: number;
+	/** How far each plane has travelled, in viewport heights. */
+	hand: number;
+	machine: number;
+	/** The machine's plane repeats this often, in viewport heights. */
+	period: number;
+};
 
 export type FieldOptions = {
 	seed: number;
-	/** Where the void sits, as fractions of the viewport. Called on every resize. */
-	place: (width: number, height: number) => VoidPlacement;
-	/** 0 = the painting is whole, 1 = it has been torn off the page. Called every frame. */
-	tear: () => number;
-	/** Told whenever a new painting begins, and where its void ended up in CSS pixels. */
+	/** Asked every frame. */
+	scene: () => Scene;
+	/** Told whenever a new painting begins. */
 	onPaint?: (seed: number) => void;
-	onLayout?: (void_: { x: number; y: number; radius: number }) => void;
 };
 
 export type Field = {
@@ -25,6 +45,7 @@ const EMPTY = -1.05;
 const STEP = 1 / 60;
 // Exactly one 8-bit level per step: a stroke takes about four seconds to dry.
 const FADE = 1 / 255;
+const TRAIL_ROWS = 256;
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeIn = (t: number) => t * t * t;
@@ -36,22 +57,47 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
 
 	let palette: Palette = readPalette();
 	let seed = options.seed;
-	let painting: Painting;
-	let placement: VoidPlacement;
+	let character: FieldCharacter;
 	let scale = Math.min(window.devicePixelRatio || 1, 1.5);
 	let width = 0;
 	let height = 0;
 	let viewW = 0;
 	let viewH = 0;
 
+	// One painting, recomposed in place on every frame.
+	const painting: Painting = {
+		seed,
+		dir: [1, 0],
+		bands: 0,
+		shear: 0,
+		glitch: 0,
+		wash: 0,
+		reach: 0,
+		env: 0,
+		panels: 1,
+		focus: [0, 0],
+		stretch: [1, 1],
+		void: [0, 0, 0],
+	};
+	const hand: [number, number] = [0, 0];
+	const machine: [number, number] = [0, 0];
+	const shift: [number, number] = [0, 0];
+
 	let raf = 0;
 	let last = performance.now();
 	let time = (seed % 600) + 10;
 	let accumulator = 0;
 	let dirty = true;
-	let lastTear = -1;
 	let slowFrames = 0;
 	let frames = 0;
+
+	// what the page last asked for, to tell a moving page from a resting one
+	let seen = "";
+	let lastScroll = -Infinity;
+	let resting = false;
+	let steady = false;
+	let travelled = Number.NaN;
+	let carry = 0;
 
 	// bloom: "in" grows the ink out of nothing; "out" drains it before a repaint
 	let phase: "in" | "out" | "still" = reduced ? "still" : "in";
@@ -65,14 +111,34 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
 	let ghosting = false;
 	let ghostAngle = (seed % 628) / 100;
 
-	function compose() {
-		painting = fieldPainting(seed, {
-			width: viewW,
-			height: viewH,
-			voidX: placement.x,
-			voidY: placement.y,
-			voidRadius: placement.radius,
-		});
+	/** The part of the painting the seed decides. */
+	function cast() {
+		character = fieldCharacter(seed, viewW / viewH < 0.8);
+		painting.seed = character.seed;
+		painting.dir = character.dir;
+		painting.bands = character.bands;
+		painting.shear = character.shear;
+		painting.glitch = character.glitch;
+		painting.wash = character.wash;
+		painting.panels = character.panels;
+	}
+
+	/** The part the page decides. */
+	function compose(scene: Scene) {
+		const x = (scene.x - 0.5) * (viewW / viewH);
+		const y = 0.5 - scene.y;
+		painting.void[0] = x;
+		painting.void[1] = y;
+		painting.void[2] = (scene.radius * Math.min(viewW, viewH)) / viewH;
+		painting.focus[0] = x + scene.lean[0];
+		painting.focus[1] = y + scene.lean[1];
+		painting.stretch[0] = scene.stretch[0];
+		painting.stretch[1] = scene.stretch[1];
+		painting.reach = scene.reach + character.spread;
+		painting.env = scene.env;
+		// Scrolling down carries the page up; both planes follow it, each at its own pace.
+		hand[1] = -scene.hand;
+		machine[1] = -scene.machine;
 	}
 
 	function resize() {
@@ -82,18 +148,12 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
 		height = Math.max(2, Math.round(viewH * scale));
 		canvas.width = width;
 		canvas.height = height;
-		placement = options.place(viewW, viewH);
-		compose();
+		cast();
 		if (!reduced) {
-			const trailH = 256;
-			ink.resizeTrail(Math.max(2, Math.round((trailH * viewW) / viewH)), trailH);
+			ink.resizeTrail(Math.max(2, Math.round((TRAIL_ROWS * viewW) / viewH)), TRAIL_ROWS);
 			brush = null;
+			carry = 0;
 		}
-		options.onLayout?.({
-			x: placement.x * viewW,
-			y: placement.y * viewH,
-			radius: placement.radius * Math.min(viewW, viewH),
-		});
 		dirty = true;
 	}
 
@@ -108,7 +168,7 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
 		const t = clamp(phaseTime / DRAIN_SECONDS, 0, 1);
 		if (t >= 1) {
 			seed = nextSeed;
-			compose();
+			cast();
 			options.onPaint?.(seed);
 			phase = "in";
 			phaseTime = 0;
@@ -117,44 +177,51 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
 		return EMPTY * easeIn(t);
 	}
 
-	function ghost(dt: number): [number, number] {
+	function voidRadius(scene: Scene) {
+		return (scene.radius * Math.min(viewW, viewH)) / viewH;
+	}
+
+	function ghost(dt: number, scene: Scene): [number, number] {
 		ghostAngle += dt * 0.42;
-		const radiusY = (placement.radius * Math.min(viewW, viewH)) / viewH;
-		const orbit = radiusY * (1.24 + 0.3 * Math.sin(time * 0.29) + 0.1 * Math.sin(time * 0.83));
+		const orbit = voidRadius(scene) * (1.24 + 0.3 * Math.sin(time * 0.29) + 0.1 * Math.sin(time * 0.83));
 		return [
-			placement.x + (Math.cos(ghostAngle) * orbit * viewH) / viewW,
-			1 - placement.y + Math.sin(ghostAngle) * orbit,
+			scene.x + (Math.cos(ghostAngle) * orbit * viewH) / viewW,
+			1 - scene.y + Math.sin(ghostAngle) * orbit,
 		];
 	}
 
-	function simulate(dt: number, tear: number, now: number) {
+	function simulate(dt: number, scene: Scene, now: number) {
 		accumulator = Math.min(accumulator + dt, STEP * 4);
 		while (accumulator >= STEP) {
 			accumulator -= STEP;
 			const idle = now - lastMove > 2400;
-			const active = tear < 0.6;
 			let target: [number, number] | null = null;
 			let radius = 0.03;
 
-			if (active && !idle && pointer) {
+			if (scene.brush > 0.5 && !idle && pointer) {
 				if (ghosting) brush = null;
 				ghosting = false;
 				target = pointer;
-			} else if (active && idle && phase === "still") {
+			} else if (idle && phase === "still" && scene.tear < 0.6) {
 				if (!ghosting) brush = null;
 				ghosting = true;
-				target = ghost(STEP);
-				radius = 0.017 + 0.011 * Math.sin(time * 0.61);
+				target = ghost(STEP, scene);
+				radius = Math.max(0.006, voidRadius(scene) * (0.103 + 0.067 * Math.sin(time * 0.61)));
 			}
+
+			// What is already on the sheet travels with the hand's plane, a whole texel at a time.
+			const rows = Math.trunc(carry);
+			carry -= rows;
+			shift[1] = -rows;
 
 			if (target && brush) {
 				const dx = ((target[0] - brush[0]) * viewW) / viewH;
 				const dy = target[1] - brush[1];
 				const speed = Math.hypot(dx, dy);
 				if (!ghosting) radius = clamp(0.046 - speed * 0.5, 0.012, 0.046);
-				ink.stroke(brush, target, radius, speed > 1e-5 ? 1 : 0, FADE);
+				ink.stroke(brush, target, radius, speed > 1e-5 ? 1 : 0, FADE, shift);
 			} else {
-				ink.stroke([0, 0], [0, 0], 0.001, 0, FADE);
+				ink.stroke([0, 0], [0, 0], 0.001, 0, FADE, shift);
 			}
 			brush = target ? [target[0], target[1]] : null;
 		}
@@ -162,31 +229,50 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
 
 	function frame(now: number) {
 		raf = requestAnimationFrame(frame);
+		const scene = options.scene();
+
+		const asked = `${scene.hand}|${scene.tear}|${scene.x}|${scene.y}|${scene.radius}`;
+		const moved = asked !== seen;
+		seen = asked;
+		if (moved) lastScroll = now;
+
+		let busy = true;
+		if (reduced) {
+			if (!dirty && !moved) return;
+		} else {
+			// At rest the painting only breathes: every other frame is enough.
+			busy =
+				dirty || phase !== "still" || now - lastScroll < 240 || now - lastMove < 320;
+			resting = !busy && !resting;
+			if (resting) return;
+		}
+
 		const dt = Math.min((now - last) / 1000, 0.1);
 		last = now;
-		const tear = clamp(options.tear(), 0, 1);
+		compose(scene);
 
-		if (reduced) {
-			if (!dirty && tear === lastTear) return;
-		} else {
+		if (!reduced) {
 			time += dt;
-			// Fully torn and nothing left to dry: hold the last frame, spend nothing.
-			if (tear >= 1 && lastTear >= 1 && !dirty && phase === "still") return;
-			simulate(dt, tear, now);
+			if (!Number.isNaN(travelled)) carry += (scene.hand - travelled) * TRAIL_ROWS;
+			travelled = scene.hand;
+			simulate(dt, scene, now);
 		}
 
 		const started = performance.now();
 		ink.paint(width, height, painting, palette, {
 			time,
-			tear,
-			density: density(dt),
+			tear: scene.tear,
+			density: density(dt) + scene.density,
 			grain: 0.028,
+			hand,
+			machine,
+			period: scene.period,
 		});
-		lastTear = tear;
 		dirty = false;
 
 		// If this machine is struggling, paint a smaller canvas rather than a slower one.
-		if (!reduced) {
+		// Only frames painted back to back say anything about that.
+		if (!reduced && busy && steady) {
 			frames += 1;
 			if (dt > 0.03 || performance.now() - started > 12) slowFrames += 1;
 			if (frames >= 90) {
@@ -198,6 +284,7 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
 				slowFrames = 0;
 			}
 		}
+		steady = busy;
 	}
 
 	function onPointer(event: PointerEvent) {
@@ -238,7 +325,7 @@ export function mountField(canvas: HTMLCanvasElement, options: FieldOptions): Fi
 			nextSeed = toSeed(value ?? Math.random() * 99991);
 			if (reduced) {
 				seed = nextSeed;
-				compose();
+				cast();
 				options.onPaint?.(seed);
 				dirty = true;
 				return;
