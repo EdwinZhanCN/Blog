@@ -141,7 +141,7 @@ const pad = (value: number) => String(value).padStart(2, "0");
 						<p class="label" lang="en">Contents</p>
 						<ol>
 							{toc.map((heading) => (
-								<li data-depth={heading.depth}>
+								<li data-level={heading.depth}>
 									<a href={`#${heading.slug}`}>{heading.text}</a>
 								</li>
 							))}
@@ -334,7 +334,7 @@ const pad = (value: number) => String(value).padStart(2, "0");
 			border-color 0.3s;
 	}
 
-	.toc li[data-depth="3"] a {
+	.toc li[data-level="3"] a {
 		padding-left: 26px;
 	}
 
