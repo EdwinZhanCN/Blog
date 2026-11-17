@@ -8,7 +8,7 @@ import { codeFrame } from "./src/lib/markdown/code-frame.mjs";
 
 // https://astro.build/config
 export default defineConfig({
-	site: "https://edwinzhan.space",
+	site: "https://blog.edwinzhan.space",
 	integrations: [mdx(), sitemap()],
 	markdown: {
 		remarkPlugins: [remarkCallouts],
