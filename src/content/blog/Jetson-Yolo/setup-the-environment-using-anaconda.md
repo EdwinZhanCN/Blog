@@ -12,9 +12,6 @@ tags:
   - TensorRT
 ---
 
-import { Image } from "astro:assets";
-import PythonExtensionInstall from "../../../assets/Jetson-Yolo/python-extension-install.png";
-
 This is the chapter where most Jetson YOLO setups either become stable or turn into dependency drift. The important thing is not only to create a conda environment, but to keep Python, PyTorch, Torchvision, JetPack, and TensorRT compatible with each other.
 
 ## Create a Conda Environment
@@ -64,7 +61,7 @@ conda deactivate
 
 Open VS Code and inspect the Python-related extensions in the extensions sidebar.
 
-<Image src={PythonExtensionInstall} alt="Python-related VS Code extensions installed on Jetson" />
+![Python-related VS Code extensions installed on Jetson](./_assets/python-extension-install.png)
 
 ## Install Ultralytics
 

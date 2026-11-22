@@ -3,7 +3,7 @@ import { glob } from "astro/loaders";
 import { z } from "astro/zod";
 
 const blog = defineCollection({
-	loader: glob({ base: "./src/content/blog", pattern: "**/*.{md,mdx}" }),
+	loader: glob({ base: "./src/content/blog", pattern: "**/[^_]*.{md,mdx}" }),
 	schema: ({ image }) =>
 		z.object({
 			// The only two things a note needs to exist.

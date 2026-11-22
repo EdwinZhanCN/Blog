@@ -23,14 +23,22 @@ A note needs two things: `title` and `pubDate`. Everything else can stay empty.
 
 Titles written as `@Series: Title` are shown without the prefix wherever the series is already named.
 
-Obsidian callouts (`> [!note] Title`) and code titles (` ```ts title="file.ts" `) render the same on the site as in the vault. The vault template is `templates/Blog-Template.md`.
+Obsidian callouts (`> [!note] Title`) and code titles (` ```ts title="file.ts" `) render the same on the site as in the vault. The vault template is `src/content/blog/_templates/Blog-Template.md`.
+
+### Obsidian
+
+Open **`src/content/blog/`** as the vault, not the repo root: no code, no symlinks. Its `.obsidian/` is git-ignored, so on a new machine set Files & links to: Wikilinks off · New link format *Relative path to file* · Attachment folder `./_assets` · Templater template folder `_templates`.
+
+Pictures live next to their series in `_assets/` and are written as ordinary Markdown, `![alt](./_assets/pic.png)`. Astro resolves and optimises them; no `import` needed, so notes stay plain `.md`. Anything starting with `_` is ignored by the content collection.
 
 ## Where things are
 
 ```text
 src/
 ├── consts.ts            site title, nav, links, status wording
-├── content/blog/        the notes; one folder per series
+├── content/blog/        the notes (and the Obsidian vault); one folder per series
+│   ├── _templates/      note template, not published
+│   └── <series>/_assets/  that series' images
 ├── lib/ink/             the painting
 │   ├── glsl.ts          the shader: ink, bands, panels, the void
 │   ├── painting.ts      seed → character (direction, shear, how much is machine)

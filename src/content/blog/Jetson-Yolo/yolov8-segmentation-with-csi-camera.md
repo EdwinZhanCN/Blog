@@ -12,9 +12,6 @@ tags:
   - CSI Camera
 ---
 
-import { Image } from "astro:assets";
-import ResultSegmentation from "../../../assets/Jetson-Yolo/result-segmentation.png";
-
 This chapter extends the earlier YOLOv8 setup into a live CSI camera segmentation pipeline on Jetson Orin Nano.
 
 ## Rebuild OpenCV With GStreamer Support
@@ -122,7 +119,7 @@ cv2.destroyAllWindows()
 
 If everything is wired correctly, the result looks like this:
 
-<Image src={ResultSegmentation} alt="YOLOv8 segmentation result from a CSI camera on Jetson Orin Nano" />
+![YOLOv8 segmentation result from a CSI camera on Jetson Orin Nano](./_assets/result-segmentation.png)
 
 ## Common Runtime Issues
 

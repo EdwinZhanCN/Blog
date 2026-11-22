@@ -12,11 +12,6 @@ tags:
   - Jtop
 ---
 
-import { Image } from "astro:assets";
-import JetsonLinux from "../../../assets/Jetson-Yolo/jetson-linux.png";
-import JtopDashboard from "../../../assets/Jetson-Yolo/jtop-dashboard.png";
-import JtopVersion from "../../../assets/Jetson-Yolo/jtop-version.png";
-
 This chapter is about verifying the machine before doing anything more ambitious. On Jetson, the exact JetPack and library stack matters enough that version drift can waste hours later.
 
 ## Linux Command Line
@@ -27,7 +22,7 @@ If you are still new to Ubuntu CLI usage, start with [Basic Commands](/blog/jets
 
 If you see the NVIDIA-styled Jetson desktop, that is a quick sign that the system is at least booting into the expected Linux environment.
 
-<Image src={JetsonLinux} alt="Jetson Linux desktop on Jetson Orin Nano" />
+![Jetson Linux desktop on Jetson Orin Nano](./_assets/jetson-linux.png)
 
 ## Install `jtop`
 
@@ -58,13 +53,13 @@ jtop
 
 If installation succeeded, you should see a terminal UI similar to this:
 
-<Image src={JtopDashboard} alt="jtop dashboard showing CPU, GPU, memory, and system status on Jetson" />
+![jtop dashboard showing CPU, GPU, memory, and system status on Jetson](./_assets/jtop-dashboard.png)
 
 ## Confirm JetPack and Library Versions
 
 The next check is more important than it looks. You want to confirm that the system version, JetPack version, CUDA, cuDNN, TensorRT, and related libraries match the environment you plan to target.
 
-<Image src={JtopVersion} alt="jtop info page showing JetPack, CUDA, TensorRT, and system versions" />
+![jtop info page showing JetPack, CUDA, TensorRT, and system versions](./_assets/jtop-version.png)
 
 If your environment differs too much from the expected stack, you may need to reflash the device using NVIDIA SDK Manager from a supported x86 Ubuntu host.
 

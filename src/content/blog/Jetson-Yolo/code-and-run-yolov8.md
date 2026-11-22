@@ -12,10 +12,6 @@ tags:
   - VS Code
 ---
 
-import { Image } from "astro:assets";
-import PythonEnvShow from "../../../assets/Jetson-Yolo/python-env-show.png";
-import SelectPythonEnv from "../../../assets/Jetson-Yolo/select-python-env.png";
-
 This chapter moves from environment setup into an actual working YOLOv8 inference path. The main idea is simple:
 
 1. clone the Ultralytics repository
@@ -44,7 +40,7 @@ If you are working across multiple machines, storing source on NAS is also a rea
 
 Open VS Code after cloning the repository. In the Python extension view, you should be able to see the global interpreters and the `yolov8` conda environment created earlier.
 
-<Image src={PythonEnvShow} alt="VS Code Python environments showing the conda yolov8 environment" />
+![VS Code Python environments showing the conda yolov8 environment](./_assets/python-env-show.png)
 
 ## Download a Model
 
@@ -88,7 +84,7 @@ This does two important things:
 
 In VS Code, press `Ctrl + Shift + P`, search for `Python: Select Interpreter`, and choose the `yolov8` conda environment.
 
-<Image src={SelectPythonEnv} alt="VS Code Select Interpreter dialog with the yolov8 environment selected" />
+![VS Code Select Interpreter dialog with the yolov8 environment selected](./_assets/select-python-env.png)
 
 Once the interpreter is correct, run the file from VS Code.
 
